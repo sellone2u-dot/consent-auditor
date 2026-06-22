@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consent Auditor — Free Dealer Website Compliance Tool</title>
-<meta name="description" content="A free Chrome extension that instantly checks any dealership website for cookie consent compliance, firing order, and tracking tool behavior.">
+<title>Consent Auditor v13 — Free Dealer Website Compliance Tool</title>
+<meta name="description" content="A free Chrome extension that instantly checks dealership websites for cookie consent behavior, firing order, tracking tools, and consent-state evidence.">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0c12;color:#e0e2f0;line-height:1.6}
@@ -119,15 +119,15 @@ footer a{color:#378ADD;text-decoration:none}
     <div class="nav-logo-icon">🛡️</div>
     Consent Auditor
   </div>
-  <a href="https://github.com/sellone2u-dot/consent-auditor/releases/latest/download/consent-auditor-extension.zip" class="nav-btn">⬇ Download Free</a>
+  <a href="consent-auditor-extension.zip" class="nav-btn">⬇ Download Free</a>
 </nav>
 
 <div class="hero">
   <div class="hero-badge">🔍 Free Chrome Extension for Auto Dealers</div>
   <h1>Is your dealership website<br><span>actually compliant?</span></h1>
-  <p>Consent Auditor instantly checks any dealership website for cookie consent compliance, tracking tool behavior, and firing order — in plain English, no technical knowledge required.</p>
+  <p>Consent Auditor instantly checks any dealership website for cookie consent behavior, tracking tools, Google Consent Mode signals, GTM containers, and cookie activity — in plain English, no technical knowledge required.</p>
   <div class="hero-btns">
-    <a href="https://github.com/sellone2u-dot/consent-auditor/releases/latest/download/consent-auditor-extension.zip" class="btn-primary">⬇ Download Extension — Free</a>
+    <a href="consent-auditor-extension.zip" class="btn-primary">⬇ Download Extension — Free</a>
     <a href="#how-to-install" class="btn-secondary">📋 How to install</a>
   </div>
 </div>
@@ -148,15 +148,15 @@ footer a{color:#378ADD;text-decoration:none}
   <div class="grade-grid">
     <div class="grade-card">
       <div class="gc gA"><div class="gl">A</div><div class="gw">Great</div></div>
-      <div><h3>Strong consent practices</h3><p>Consent manager found, Google Consent Mode signals confirmed, Meta pixel properly blocked before visitor opt-in.</p></div>
+      <div><h3>Strong consent practices</h3><p>Consent manager found, strong Google restricted-consent signals confirmed, Meta blocked, and no targeting cookies detected in the selected test state.</p></div>
     </div>
     <div class="grade-card">
       <div class="gc gB"><div class="gl">B</div><div class="gw">Good</div></div>
-      <div><h3>Mostly compliant</h3><p>Consent manager present but some signals need vendor confirmation. A few items to verify in writing.</p></div>
+      <div><h3>Mostly compliant</h3><p>Consent manager present, but GTM ownership, analytics cookies, or Google consent-state proof needs vendor confirmation.</p></div>
     </div>
     <div class="grade-card">
       <div class="gc gC"><div class="gl">C</div><div class="gw">Fair</div></div>
-      <div><h3>Consent gaps present</h3><p>Consent manager may not be governing all tracking tools. Multiple GTM containers or missing consent signals detected.</p></div>
+      <div><h3>Consent gaps present</h3><p>One or more consent gaps need review. Examples include excessive GTM containers, missing restricted-consent signals, or cookies appearing after Deny.</p></div>
     </div>
     <div class="grade-card">
       <div class="gc gF"><div class="gl">F</div><div class="gw">Critical</div></div>
@@ -183,7 +183,7 @@ footer a{color:#378ADD;text-decoration:none}
     <div class="feature">
       <span class="feature-icon">📊</span>
       <h3>Google Consent Mode signals</h3>
-      <p>Checks for gcs=G100, npa=1, and pscdl=denied — the technical signals that confirm Google is receiving restricted instructions before consent.</p>
+      <p>Checks for gcs, gcd, npa=1, pscdl=denied, and ads_data_redaction signals — then separates strong proof from indicators that still need confirmation.</p>
     </div>
     <div class="feature">
       <span class="feature-icon">👤</span>
@@ -202,22 +202,22 @@ footer a{color:#378ADD;text-decoration:none}
 <div class="findings-section">
   <div class="section-label">Real world findings</div>
   <h2>What we found auditing<br>real dealership websites</h2>
-  <p class="section-sub" style="margin-bottom:40px">Every site below was scanned using this tool. Results reflect what fired before the visitor touched any cookie banner.</p>
+  <p class="section-sub" style="margin-bottom:40px">Every audit should be saved by test state: Fresh Visitor, Deny, and Accept. Results should be confirmed with the consent platform vendor before treating them as final compliance findings.</p>
 
   <div class="finding-cards">
     <div class="finding-card">
       <div class="site-name">lexusofchattanooga.com</div>
-      <div class="grade-row"><div class="gc gA" style="width:36px;height:36px"><div class="gl" style="font-size:16px">A</div></div><strong style="color:#8bd44a">Grade A — Compliant</strong></div>
+      <div class="grade-row"><div class="gc gA" style="width:36px;height:36px"><div class="gl" style="font-size:16px">A</div></div><strong style="color:#8bd44a">Grade A — Strong</strong></div>
       <div class="detail">
-        ComplyAuto installed and active. Google Consent Mode confirmed: <span class="tag tag-pass">gcs=G100</span> <span class="tag tag-pass">npa=1</span> <span class="tag tag-pass">pscdl=denied</span><br><br>
-        Meta pixel blocked before consent. 3 GTM containers identified — all governed by ComplyAuto.
+        ComplyAuto detected. Strong Google restricted-consent signals captured: <span class="tag tag-pass">gcs</span> <span class="tag tag-pass">npa=1</span> <span class="tag tag-pass">pscdl=denied</span><br><br>
+        Meta requests and targeting cookies should remain blocked before consent and after Deny.
       </div>
     </div>
     <div class="finding-card">
       <div class="site-name">northgeorgiatoyota.com</div>
-      <div class="grade-row"><div class="gc gA" style="width:36px;height:36px"><div class="gl" style="font-size:16px">A</div></div><strong style="color:#8bd44a">Grade A — Compliant</strong></div>
+      <div class="grade-row"><div class="gc gA" style="width:36px;height:36px"><div class="gl" style="font-size:16px">A</div></div><strong style="color:#8bd44a">Grade A — Strong</strong></div>
       <div class="detail">
-        ComplyAuto installed. Consent Mode signals confirmed. <span class="tag tag-warn">6 GTM containers detected</span> — highest number seen in testing. All appear governed, but each container represents a potential gap requiring vendor confirmation.
+        ComplyAuto detected. <span class="tag tag-warn">Multiple GTM containers detected</span> — each container should be confirmed in writing as governed by the consent platform.
       </div>
     </div>
     <div class="finding-card">
@@ -255,7 +255,7 @@ footer a{color:#378ADD;text-decoration:none}
     <div style="text-align:center">
       <div class="section-label" style="text-align:center">How to install</div>
       <h2 style="font-size:36px;font-weight:700;color:#fff;margin-bottom:16px">Up and running in 3 minutes</h2>
-      <p style="font-size:16px;color:#8b90b0;max-width:500px;margin:0 auto">No technical knowledge required. Works in regular Chrome — no incognito needed for basic auditing.</p>
+      <p style="font-size:16px;color:#8b90b0;max-width:500px;margin:0 auto">No technical knowledge required. For best evidence, run separate Fresh Visitor, Deny, and Accept tests in Chrome incognito.</p>
     </div>
     <div class="steps-grid">
       <div class="step">
@@ -290,7 +290,7 @@ footer a{color:#378ADD;text-decoration:none}
       </div>
     </div>
     <div style="text-align:center;margin-top:48px">
-      <a href="https://github.com/sellone2u-dot/consent-auditor/releases/latest/download/consent-auditor-extension.zip" class="btn-primary" style="display:inline-flex">⬇ Download Consent Auditor — Free</a>
+      <a href="consent-auditor-extension.zip" class="btn-primary" style="display:inline-flex">⬇ Download Consent Auditor — Free</a>
     </div>
   </div>
 </div>
@@ -298,8 +298,8 @@ footer a{color:#378ADD;text-decoration:none}
 <!-- Final CTA -->
 <div class="cta-section">
   <h2>Start auditing your<br>dealership websites today</h2>
-  <p>Free to use. No account required. Works on any dealership website. Built on ComplyAuto's own published 10-standard audit framework.</p>
-  <a href="https://github.com/sellone2u-dot/consent-auditor/releases/latest/download/consent-auditor-extension.zip" class="btn-primary" style="display:inline-flex;margin:0 auto">⬇ Download Free Chrome Extension</a>
+  <p>Free to use. No account required. Works on any dealership website. Built to make cookie consent behavior easier to see, document, and discuss with your vendors.</p>
+  <a href="consent-auditor-extension.zip" class="btn-primary" style="display:inline-flex;margin:0 auto">⬇ Download Free Chrome Extension</a>
 </div>
 
 <footer>
