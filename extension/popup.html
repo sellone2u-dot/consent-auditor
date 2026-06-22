@@ -5,10 +5,11 @@
 <title>Consent Auditor</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:440px;height:580px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;font-size:13px}
+html,body{width:480px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;font-size:13px}
 body{display:flex;flex-direction:column}
 
-.header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#13161f;border-bottom:1px solid #1e2130;flex-shrink:0}
+/* Header */
+.header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#13161f;border-bottom:1px solid #1e2130}
 .logo{width:28px;height:28px;background:linear-gradient(135deg,#1e5fa8,#3a8fd4);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .htext h1{font-size:13px;font-weight:500;color:#fff}
 .htext p{font-size:10px;color:#6b7090}
@@ -16,14 +17,20 @@ body{display:flex;flex-direction:column}
 .scan-btn:hover{background:#1a4f8a}
 .scan-btn:disabled{background:#1e2a40;color:#4a5270;cursor:not-allowed}
 
-.url-bar{padding:4px 14px;font-size:10px;color:#4a5270;background:#0d0f17;border-bottom:1px solid #1e2130;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
-.status{padding:5px 14px;font-size:11px;color:#6b7090;display:flex;align-items:center;gap:6px;border-bottom:1px solid #1e2130;background:#0d0f17;flex-shrink:0}
+.url-bar{padding:4px 14px;font-size:10px;color:#4a5270;background:#0d0f17;border-bottom:1px solid #1e2130;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status{padding:5px 14px;font-size:11px;color:#6b7090;display:flex;align-items:center;gap:6px;background:#0d0f17}
+.mode-row{display:flex;align-items:center;gap:8px;padding:7px 14px;background:#10131c;border-bottom:1px solid #1e2130}
+.mode-label{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#4a5270;flex-shrink:0}
+.mode-select{flex:1;background:#0d0f17;color:#c0c4dc;border:1px solid #25293a;border-radius:5px;padding:5px 7px;font-size:11px}
+.mode-note{font-size:9px;color:#4a5270;padding:0 14px 6px;background:#10131c;border-bottom:1px solid #1e2130}
+.audit-state-box{padding:6px 14px;font-size:11px;line-height:1.5;background:rgba(55,138,221,.08);color:#8fbff0;border-bottom:1px solid #1e2130}
 .sp{width:11px;height:11px;border:2px solid #1e2130;border-top-color:#378ADD;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.grade-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#13161f;border-bottom:1px solid #1e2130;flex-shrink:0}
-.gc{width:50px;height:50px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2.5px solid;flex-shrink:0}
-.gc .gl{font-size:20px;font-weight:600;line-height:1}
+/* Grade bar */
+.grade-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#13161f;border-bottom:1px solid #1e2130}
+.gc{width:52px;height:52px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2.5px solid;flex-shrink:0}
+.gc .gl{font-size:22px;font-weight:600;line-height:1}
 .gc .gw{font-size:8px;text-transform:uppercase;letter-spacing:.4px;margin-top:1px;opacity:.8}
 .gA{background:rgba(99,153,34,.18);border-color:#639922;color:#8bd44a}
 .gB{background:rgba(30,95,168,.18);border-color:#378ADD;color:#6ab4f5}
@@ -33,63 +40,61 @@ body{display:flex;flex-direction:column}
 .gm h2{font-size:12px;font-weight:500;color:#fff;margin-bottom:2px}
 .gm p{font-size:11px;color:#8b8fa8;line-height:1.4}
 
-.stats-row{display:flex;border-bottom:1px solid #1e2130;flex-shrink:0}
+/* Stats */
+.stats-row{display:flex;border-bottom:1px solid #1e2130}
 .stat{flex:1;padding:6px 4px;text-align:center;border-right:1px solid #1e2130}
 .stat:last-child{border-right:none}
 .stat .sv{font-size:14px;font-weight:500;color:#fff;display:block}
 .stat .sl{font-size:9px;text-transform:uppercase;letter-spacing:.3px;color:#4a5270;margin-top:1px;display:block}
 
-.gtm-bar{padding:5px 14px;background:#0d0f17;border-bottom:1px solid #1e2130;display:flex;align-items:center;gap:5px;flex-wrap:wrap;flex-shrink:0}
+/* GTM bar */
+.gtm-bar{padding:5px 14px;background:#0d0f17;border-bottom:1px solid #1e2130;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .gtm-label{font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:#4a5270;flex-shrink:0}
 .gtm-pill{background:rgba(55,138,221,.15);border:1px solid rgba(55,138,221,.3);color:#6ab4f5;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:500;font-family:monospace}
 .gtm-pill.warn{background:rgba(239,159,39,.12);border-color:rgba(239,159,39,.3);color:#f5bc62}
+.gtm-pill.oem{background:rgba(226,75,74,.1);border-color:rgba(226,75,74,.3);color:#f07776}
 
-.sig-box{padding:6px 14px;font-size:11px;line-height:1.5;border-bottom:1px solid #1e2130;flex-shrink:0}
+/* Consent mode signal */
+.sig-box{padding:5px 14px;font-size:11px;line-height:1.5;border-bottom:1px solid #1e2130}
 .sig-pass{background:rgba(99,153,34,.1);color:#8bd44a}
 .sig-warn{background:rgba(239,159,39,.08);color:#f5bc62}
 .sig-label{font-size:9px;text-transform:uppercase;letter-spacing:.4px;opacity:.7;margin-bottom:1px}
 
-.tabs{display:flex;background:#0d0f17;border-bottom:1px solid #1e2130;flex-shrink:0}
-.tab{flex:1;padding:8px 4px;font-size:11px;font-weight:500;cursor:pointer;border:none;background:none;color:#4a5270;border-bottom:2px solid transparent;text-align:center}
+/* ── FINDINGS SUMMARY — the new star of the show ── */
+.summary-block{padding:10px 14px;border-bottom:1px solid #1e2130;background:#0d0f17}
+.summary-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#4a5270;margin-bottom:8px}
+.summary-item{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:6px;margin-bottom:5px;font-size:12px;line-height:1.4}
+.summary-item:last-child{margin-bottom:0}
+.si-fail{background:rgba(226,75,74,.12);border:1px solid rgba(226,75,74,.2)}
+.si-warn{background:rgba(239,159,39,.1);border:1px solid rgba(239,159,39,.2)}
+.si-pass{background:rgba(99,153,34,.1);border:1px solid rgba(99,153,34,.2)}
+.si-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.si-text{flex:1}
+.si-label{font-weight:600;display:block;margin-bottom:2px}
+.si-fail .si-label{color:#f07776}
+.si-warn .si-label{color:#f5bc62}
+.si-pass .si-label{color:#8bd44a}
+.si-tip{font-size:11px;color:#6b7090;line-height:1.5}
+
+/* Output buttons */
+.output-row{display:flex;gap:6px;padding:8px 14px;background:#0d0f17;border-bottom:1px solid #1e2130}
+.out-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #1e2130;background:#13161f;color:#8b90b0}
+.out-btn:hover{border-color:#378ADD;color:#6ab4f5;background:#0d1420}
+.out-btn.success{border-color:#639922;color:#8bd44a;background:rgba(99,153,34,.1)}
+
+/* Detail tabs */
+.tabs{display:flex;background:#0d0f17;border-bottom:1px solid #1e2130}
+.tab{flex:1;padding:7px 4px;font-size:10px;font-weight:500;cursor:pointer;border:none;background:none;color:#4a5270;border-bottom:2px solid transparent;text-align:center}
 .tab.on{color:#fff;border-bottom-color:#378ADD}
 .tab:hover:not(.on){color:#8b90b0}
 
-/* The key fix — panels container takes all remaining height */
-.panels{flex:1;overflow:hidden;position:relative;min-height:0}
-.panel{display:none;position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto}
+/* Panels */
+.panels{overflow:hidden;position:relative}
+.panel{display:none;max-height:280px;overflow-y:auto}
 .panel.on{display:block}
 .panel::-webkit-scrollbar{width:3px}
 .panel::-webkit-scrollbar-track{background:#0d0f17}
 .panel::-webkit-scrollbar-thumb{background:#2a2d3a;border-radius:2px}
-
-/* Finding rows */
-.finding{border-bottom:1px solid #1e2130}
-.fh{
-  display:flex;align-items:center;gap:10px;
-  padding:13px 14px;
-  cursor:pointer;background:#13161f;
-  border:none;width:100%;text-align:left;
-  color:inherit;font-family:inherit;
-}
-.fh:hover{background:#1c2030}
-.fh:active{background:#222538}
-.fi2{font-size:15px;flex-shrink:0}
-.ft{flex:1;font-size:12px;font-weight:500;color:#d0d4e8;line-height:1.35}
-.fright{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.fb{font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;white-space:nowrap}
-.bp{background:rgba(99,153,34,.2);color:#8bd44a}
-.bw{background:rgba(239,159,39,.15);color:#f5bc62}
-.br{background:rgba(226,75,74,.15);color:#f07776}
-.bi{background:rgba(55,138,221,.15);color:#6ab4f5}
-.farr{font-size:16px;color:#6b7090;transition:transform .15s;display:inline-block}
-.farr.open{transform:rotate(180deg);color:#6ab4f5}
-
-.fbody{background:#0a0c14;padding:12px 14px;display:none}
-.wb{background:#13161f;border-radius:5px;padding:8px 10px;margin-bottom:8px}
-.wl{font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:#3a4060;font-weight:500;margin-bottom:3px}
-.wt{font-size:11px;color:#b0b4cc;line-height:1.6}
-.wd{font-size:11px;color:#6b7090;line-height:1.6;margin-bottom:7px}
-.act{background:rgba(30,95,168,.12);border-left:2px solid #378ADD;padding:7px 9px;font-size:11px;color:#6ab4f5;line-height:1.5}
 
 .fi-row{display:flex;align-items:center;gap:7px;padding:7px 14px;border-bottom:1px solid #1a1d2a;font-size:11px}
 .fnum{width:16px;height:16px;border-radius:50%;background:#1a1d2a;display:flex;align-items:center;justify-content:center;font-size:8px;color:#4a5270;flex-shrink:0}
@@ -102,14 +107,29 @@ body{display:flex;flex-direction:column}
 .fbl{background:rgba(55,138,221,.15);color:#6ab4f5}
 .fk{background:#1a1d2a;color:#4a5270}
 
-.ck-row{display:flex;align-items:center;gap:7px;padding:7px 14px;border-bottom:1px solid #1a1d2a}
+.ck-row{display:flex;align-items:center;gap:7px;padding:6px 14px;border-bottom:1px solid #1a1d2a}
 .ck-name{flex:1;font-family:monospace;font-size:11px;color:#b0b4cc}
 .dom-row{display:flex;align-items:center;gap:7px;padding:6px 14px;border-bottom:1px solid #1a1d2a;font-size:11px;color:#6b7090}
 .dom-name{flex:1}
 .sh{padding:5px 14px;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:#333850;background:#0a0c14;border-bottom:1px solid #1a1d2a;position:sticky;top:0;z-index:1}
-.empty{text-align:center;padding:2rem 1rem}
-.empty span{font-size:28px;display:block;margin-bottom:.5rem}
+
+.fb{font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.bp{background:rgba(99,153,34,.2);color:#8bd44a}
+.bw{background:rgba(239,159,39,.15);color:#f5bc62}
+.br{background:rgba(226,75,74,.15);color:#f07776}
+.bi{background:rgba(55,138,221,.15);color:#6ab4f5}
+
+.empty{text-align:center;padding:1.5rem 1rem}
+.empty span{font-size:24px;display:block;margin-bottom:.4rem}
 .empty p{font-size:11px;color:#4a5270;line-height:1.5}
+
+/* Report panel */
+.report-body{padding:12px 14px;font-size:11px;line-height:1.7;color:#b0b4cc}
+.report-body p{margin-bottom:8px}
+.report-meta{font-size:10px;color:#4a5270;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2130}
+.report-placeholder{text-align:center;padding:1.5rem 1rem;color:#4a5270}
+.report-placeholder span{font-size:24px;display:block;margin-bottom:.4rem}
+.report-placeholder p{font-size:11px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -121,29 +141,62 @@ body{display:flex;flex-direction:column}
 </div>
 <div class="url-bar" id="urlBar">—</div>
 <div class="status" id="statusBar"><span>Click Scan page to analyze this website.</span></div>
+<div class="mode-row">
+  <span class="mode-label">Test mode</span>
+  <select class="mode-select" id="auditMode">
+    <option value="fresh">Fresh visitor / before consent choice</option>
+    <option value="denied">Denied cookies / reject all</option>
+    <option value="accepted">Accepted cookies / post-consent</option>
+    <option value="current">Current browser state / unknown</option>
+  </select>
+</div>
+<div class="mode-note">Choose the state that matches this scan. Incognito with no click = fresh visitor.</div>
+
+<!-- Grade + stats always visible -->
 <div id="gradeBar" style="display:none" class="grade-bar"></div>
 <div id="statsRow" style="display:none" class="stats-row"></div>
 <div id="gtmBar" style="display:none" class="gtm-bar"></div>
+<div id="auditStateBox" style="display:none" class="audit-state-box"></div>
 <div id="sigBox" style="display:none" class="sig-box"></div>
 
+<!-- FINDINGS SUMMARY — all findings visible, no tap needed -->
+<div id="summaryBlock" style="display:none" class="summary-block">
+  <div class="summary-title">📋 Findings — tap for detail tabs below</div>
+  <div id="summaryItems"></div>
+</div>
+
+<!-- Output buttons -->
+<div class="output-row" id="outputRow" style="display:none">
+  <button class="out-btn" id="copyBtn">📋 Copy report</button>
+  <button class="out-btn" id="claudeBtn">🤖 Copy AI markdown</button>
+</div>
+
+<!-- Detail tabs — for deeper dives -->
 <div class="tabs" id="tabsEl" style="display:none">
-  <button class="tab on" id="tab-findings">Findings</button>
-  <button class="tab" id="tab-firing">Firing order</button>
+  <button class="tab on" id="tab-firing">Firing order</button>
   <button class="tab" id="tab-cookies">Cookies</button>
   <button class="tab" id="tab-domains">Domains</button>
+  <button class="tab" id="tab-report">AI report</button>
 </div>
 
 <div class="panels" id="panelsEl" style="display:none">
-  <div id="p-findings" class="panel on"></div>
-  <div id="p-firing" class="panel"></div>
+  <div id="p-firing" class="panel on"></div>
   <div id="p-cookies" class="panel"></div>
   <div id="p-domains" class="panel"></div>
+  <div id="p-report" class="panel">
+    <div class="report-placeholder">
+      <span>🤖</span>
+      <p>Click <strong>Copy AI markdown</strong> above<br>to generate and copy your report.</p>
+    </div>
+  </div>
 </div>
 
 <div id="emptyArea">
   <div class="empty"><span>🔍</span><p>Navigate to any dealership website<br>then click <strong>Scan page</strong></p></div>
 </div>
 
+<script src="tips.js"></script>
+<script src="report.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

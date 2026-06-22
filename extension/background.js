@@ -1,61 +1,43 @@
-// background.js — service worker
-// Tracks network requests per tab to detect third-party calls
+// background.js v12 — network request capture for consent auditing
 
 const tabData = {};
 
-// Listen for web requests to track what fires on each page
 chrome.webRequest.onBeforeRequest.addListener(
-  (details) => {
+  function(details) {
     if (details.tabId < 0) return;
-    if (!tabData[details.tabId]) tabData[details.tabId] = { requests: [], cookies: [] };
-
-    const url = details.url;
-    let hostname = '';
-    try { hostname = new URL(url).hostname; } catch {}
-
-    const entry = {
-      url: url,
-      hostname: hostname,
+    if (!tabData[details.tabId]) tabData[details.tabId] = { requests: [] };
+    var url = details.url;
+    var hostname = '';
+    try { hostname = new URL(url).hostname; } catch(e) {}
+    tabData[details.tabId].requests.push({
+      url: url, hostname: hostname,
       type: classifyRequest(url),
       name: nameRequest(url),
       timestamp: Date.now()
-    };
-
-    tabData[details.tabId].requests.push(entry);
-
-    // Cap at 500 requests per tab
+    });
     if (tabData[details.tabId].requests.length > 500) {
       tabData[details.tabId].requests.shift();
     }
   },
-  { urls: ['<all_urls>'] },
-  []
+  { urls: ['<all_urls>'] }, []
 );
 
-// Clear data when tab navigates
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === 'loading') {
-    tabData[tabId] = { requests: [], cookies: [] };
-  }
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
+  if (changeInfo.status === 'loading') tabData[tabId] = { requests: [] };
 });
 
-// Clean up when tab closes
-chrome.tabs.onRemoved.addListener((tabId) => {
+chrome.tabs.onRemoved.addListener(function(tabId) {
   delete tabData[tabId];
 });
 
-// Handle messages from content script and popup
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
   if (msg.type === 'PAGE_DATA') {
-    const tabId = sender.tab?.id;
-    if (tabId && tabData[tabId]) {
-      tabData[tabId].pageData = msg.data;
-    }
+    var tabId = sender.tab && sender.tab.id;
+    if (tabId && tabData[tabId]) tabData[tabId].pageData = msg.data;
   }
 
   if (msg.type === 'GET_DATA') {
-    const tabId = msg.tabId;
-    const d = tabData[tabId] || { requests: [] };
+    var d = tabData[msg.tabId] || { requests: [] };
     sendResponse({ requests: d.requests || [], pageData: d.pageData || null });
   }
 
@@ -63,7 +45,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 function classifyRequest(url) {
-  const u = url.toLowerCase();
+  var u = url.toLowerCase();
   if (/complyauto|onetrust|cookiebot|cookieconsent/.test(u)) return 'consent';
   if (/googletagmanager|gtm\.js/.test(u)) return 'tag-manager';
   if (/google-analytics|analytics\.google|gtag\/js|collect\?v=/.test(u)) return 'analytics';
@@ -75,20 +57,18 @@ function classifyRequest(url) {
 }
 
 function nameRequest(url) {
-  const u = url.toLowerCase();
-  if (u.includes('complyauto')) return 'ComplyAuto';
-  if (u.includes('onetrust') || u.includes('cookielaw')) return 'OneTrust';
-  if (u.includes('cookiebot')) return 'Cookiebot';
-  if (u.includes('googletagmanager')) {
-    const gtm = url.match(/GTM-[A-Z0-9]+/);
-    return 'Google Tag Manager' + (gtm ? ' (' + gtm[0] + ')' : '');
+  var u = url.toLowerCase();
+  if (u.indexOf('complyauto') > -1) return 'ComplyAuto';
+  if (u.indexOf('onetrust') > -1 || u.indexOf('cookielaw') > -1) return 'OneTrust';
+  if (u.indexOf('cookiebot') > -1) return 'Cookiebot';
+  if (u.indexOf('googletagmanager') > -1) {
+    var g = url.match(/GTM-[A-Z0-9]+/);
+    return 'Google Tag Manager' + (g ? ' (' + g[0] + ')' : '');
   }
-  if (u.includes('google-analytics') || u.includes('gtag/js') || u.includes('analytics.google')) return 'Google Analytics 4';
-  if (u.includes('doubleclick') || u.includes('googleadservices')) return 'Google Ads';
-  if (u.includes('connect.facebook') || u.includes('facebook.com/tr')) return 'Meta / Facebook Pixel';
-  if (u.includes('hotjar')) return 'Hotjar';
-  if (u.includes('clarity.ms')) return 'Microsoft Clarity';
-  if (u.includes('drift')) return 'Drift Chat';
-  if (u.includes('tawk')) return 'Tawk.to Chat';
-  try { return new URL(url).hostname; } catch { return 'Unknown'; }
+  if (u.indexOf('google-analytics') > -1 || u.indexOf('analytics.google') > -1 || u.indexOf('gtag/js') > -1) return 'Google Analytics 4';
+  if (u.indexOf('doubleclick') > -1 || u.indexOf('googleadservices') > -1) return 'Google Ads';
+  if (u.indexOf('connect.facebook') > -1 || u.indexOf('facebook.com/tr') > -1) return 'Meta / Facebook Pixel';
+  if (u.indexOf('hotjar') > -1) return 'Hotjar';
+  if (u.indexOf('clarity.ms') > -1) return 'Microsoft Clarity';
+  try { return new URL(url).hostname; } catch(e) { return 'Unknown'; }
 }
