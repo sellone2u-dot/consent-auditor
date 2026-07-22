@@ -27,3 +27,11 @@ test('every local manifest reference resolves', () => {
     assert.ok(fs.existsSync(path.join(repositoryRoot, reference)), `missing manifest reference: ${reference}`);
   });
 });
+
+test('core dependencies load before the content runtime', () => {
+  assert.deepEqual(manifest.content_scripts[0].js, [
+    'src/core/constants.js',
+    'src/core/classify.js',
+    'content.js'
+  ]);
+});

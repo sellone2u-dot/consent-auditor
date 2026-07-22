@@ -11,7 +11,7 @@ function readJson(relativePath) {
 }
 
 test('current report logic preserves v0.1.7 single-state output expectations', () => {
-  const context = loadBrowserScripts(['tips.js', 'report.js']);
+  const context = loadBrowserScripts(['src/core/constants.js', 'src/core/classify.js', 'tips.js', 'report.js']);
   const { scan } = readJson('tests/fixtures/scans/fresh-restricted.json');
   const expectations = readJson('tests/fixtures/reports/v0.1.7-single-state-expectations.json');
   const tips = context.generateTips(scan);
