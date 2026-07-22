@@ -1,0 +1,30 @@
+{
+  "fixtureVersion": 1,
+  "description": "Sanitized v0.1.7 captured request sequence with ComplyAuto blocker.js observed before GTM and restricted Google behavior.",
+  "requests": [
+    {
+      "url": "https://cdn.example-complyauto.test/blocker.js",
+      "hostname": "cdn.example-complyauto.test",
+      "type": "consent",
+      "name": "ComplyAuto blocker.js",
+      "timestamp": 1700000000000,
+      "seq": 1
+    },
+    {
+      "url": "https://www.googletagmanager.com/gtm.js?id=GTM-TEST123",
+      "hostname": "www.googletagmanager.com",
+      "type": "tag-manager",
+      "name": "Google Tag Manager (GTM-TEST123)",
+      "timestamp": 1700000000100,
+      "seq": 2
+    },
+    {
+      "url": "https://www.google-analytics.com/g/collect?v=2&gcs=G100&npa=1",
+      "hostname": "www.google-analytics.com",
+      "type": "analytics",
+      "name": "Google Analytics 4",
+      "timestamp": 1700000000200,
+      "seq": 3
+    }
+  ]
+}

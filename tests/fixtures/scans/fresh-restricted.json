@@ -1,0 +1,132 @@
+{
+  "fixtureVersion": 1,
+  "description": "Sanitized v0.1.7 Fresh visitor analysis snapshot with ComplyAuto control evidence and restricted Google signals.",
+  "scan": {
+    "hostname": "dealer.example",
+    "det": {
+      "gtm": true,
+      "ga4": true,
+      "gads": false,
+      "meta": false,
+      "hotjar": false,
+      "clarity": false
+    },
+    "hasCMP": true,
+    "cmp": "ComplyAuto",
+    "gtmContainers": ["GTM-TEST123"],
+    "score": 100,
+    "grade": "A",
+    "gradeNotes": [],
+    "fireOrder": [
+      {
+        "seq": 1,
+        "name": "ComplyAuto blocker.js",
+        "domain": "cdn.example-complyauto.test",
+        "status": "consent-gate"
+      },
+      {
+        "seq": 2,
+        "name": "Google Tag Manager (GTM-TEST123)",
+        "domain": "www.googletagmanager.com",
+        "status": "gated"
+      }
+    ],
+    "cookies": [
+      { "name": "consent_state", "category": "Essential" }
+    ],
+    "thirdParty": [
+      "cdn.example-complyauto.test",
+      "www.googletagmanager.com",
+      "www.google-analytics.com"
+    ],
+    "consentParams": ["gcs=G100", "npa=1"],
+    "hasRestrictedSignals": true,
+    "hasOnlyGcdSignal": false,
+    "analyticsCookieCount": 0,
+    "consentVerdict": "restricted-before-consent",
+    "complyAutoLoadOrder": {
+      "status": "loaded-first",
+      "label": "ComplyAuto control script loaded first",
+      "summary": "ComplyAuto control script blocker.js was detected before major tracking activity.",
+      "firstComplyAuto": {
+        "seq": 1,
+        "label": "ComplyAuto control script blocker.js",
+        "url": "https://cdn.example-complyauto.test/blocker.js"
+      },
+      "firstComplyAutoControl": {
+        "seq": 1,
+        "label": "ComplyAuto control script blocker.js",
+        "url": "https://cdn.example-complyauto.test/blocker.js"
+      },
+      "firstComplyAutoBanner": null,
+      "firstTracking": {
+        "seq": 2,
+        "label": "Google Tag Manager",
+        "url": "https://www.googletagmanager.com/gtm.js?id=GTM-TEST123"
+      },
+      "firstGtm": {
+        "seq": 2,
+        "label": "Google Tag Manager",
+        "url": "https://www.googletagmanager.com/gtm.js?id=GTM-TEST123"
+      },
+      "firstGoogleAnalytics": {
+        "seq": 3,
+        "label": "Google Analytics",
+        "url": "https://www.google-analytics.com/g/collect?v=2&gcs=G100&npa=1"
+      },
+      "firstGoogleAds": null,
+      "firstMeta": null,
+      "firstTargetingCookie": null,
+      "firstAnalyticsCookie": null,
+      "cookieOrderConfirmed": false,
+      "priorityBeforeComplyAuto": []
+    },
+    "observedSequence": [
+      {
+        "order": 1,
+        "name": "ComplyAuto blocker.js",
+        "category": "consent layer",
+        "concern": "Consent layer",
+        "source": "network request",
+        "evidence": "https://cdn.example-complyauto.test/blocker.js",
+        "domain": "cdn.example-complyauto.test",
+        "observedStatus": "Observed"
+      },
+      {
+        "order": 2,
+        "name": "Google Tag Manager (GTM-TEST123)",
+        "category": "GTM / tag manager",
+        "concern": "Tag manager",
+        "source": "network request",
+        "evidence": "https://www.googletagmanager.com/gtm.js?id=GTM-TEST123",
+        "domain": "www.googletagmanager.com",
+        "observedStatus": "Observed"
+      }
+    ],
+    "consentLayer": {
+      "provider": "ComplyAuto",
+      "bannerVisible": "Yes",
+      "acceptControl": "Yes",
+      "denyControl": "Yes",
+      "settingsControl": "Yes",
+      "trackingChangedAfterChoice": "Not tested in this state",
+      "conclusion": "Website consent choice observed",
+      "evidence": "We use cookies. Accept All or Reject All."
+    },
+    "federalFlags": [
+      "No high-priority observation was automatically triggered by the captured scan data. This is not a legal compliance conclusion."
+    ],
+    "metaCount": 0,
+    "googleCount": 2,
+    "totalReqs": 3,
+    "auditMode": {
+      "key": "fresh",
+      "label": "Fresh visitor / before consent choice",
+      "shortLabel": "Fresh visitor",
+      "isPreConsent": true,
+      "isAccepted": false,
+      "isDenied": false
+    },
+    "savedAt": "2023-11-14T22:13:20.000Z"
+  }
+}

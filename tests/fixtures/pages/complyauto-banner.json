@@ -1,0 +1,20 @@
+{
+  "fixtureVersion": 1,
+  "description": "Sanitized v0.1.7 page observation with a visible ComplyAuto consent choice.",
+  "page": {
+    "gtmContainers": ["GTM-TEST123"],
+    "cmp": "ComplyAuto",
+    "cookies": [
+      { "name": "consent_state" }
+    ],
+    "scripts": [
+      "https://cdn.example-complyauto.test/blocker.js",
+      "https://www.googletagmanager.com/gtm.js?id=GTM-TEST123"
+    ],
+    "bannerText": "We use cookies. Accept All or Reject All.",
+    "acceptControl": true,
+    "denyControl": true,
+    "settingsControl": true,
+    "hasRealConsentChoice": true
+  }
+}

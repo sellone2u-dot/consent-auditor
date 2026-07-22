@@ -1,0 +1,12 @@
+{
+  "name": "dealer-website-risk-auditor",
+  "version": "0.1.7",
+  "private": true,
+  "description": "Regression baseline for Dealer Website Risk Auditor",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

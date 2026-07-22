@@ -61,3 +61,19 @@ It preserves the previous scanner foundation and begins shifting the product fro
 ## Suggested Test
 
 Load this folder as an unpacked Chrome extension, scan one dealership site, then export the dealer-ready markdown report and review whether the language feels dealer-first and evidence-based.
+
+## v0.2.0 Phase 0 Foundation
+
+Phase 0 adds a documentation and regression-test baseline for the planned v0.2.0 work. It does not change extension runtime behavior, analysis logic, scoring, reports, or visible terminology.
+
+- Adds the v0.2.0 compatibility contract in `docs/V0.2.0_COMPATIBILITY_CONTRACT.md`.
+- Records the architecture principle that conclusions must be traceable to evidence, major features must be independently testable, and v0.1.7 behavior must be preserved unless an intentional change is documented and approved.
+- Adds sanitized request, page, scan, and report fixtures representing current v0.1.7 behavior.
+- Adds a minimal test suite using Node's built-in test runner with no runtime dependencies.
+- Adds baseline checks for the manifest, referenced files, compatibility terminology, fixture integrity, and current report output.
+
+Run the Phase 0 regression baseline with:
+
+```sh
+npm test
+```

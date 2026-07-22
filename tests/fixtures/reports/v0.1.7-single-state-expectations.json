@@ -1,0 +1,22 @@
+{
+  "fixtureVersion": 1,
+  "description": "Stable v0.1.7 report terminology and conclusions expected for the Fresh restricted fixture.",
+  "requiredText": [
+    "Dealer Website Risk Auditor Report",
+    "Fresh visitor / before consent choice",
+    "Overall observed risk rating | Strong",
+    "## EVIDENCE STANDARD",
+    "## ABSOLUTE OBSERVED FIRING ORDER",
+    "## COMPLYAUTO CONTROL EVIDENCE",
+    "## BEHAVIORAL CONSENT SIGNAL READ",
+    "## HIGH PRIORITY OBSERVATIONS",
+    "ComplyAuto control script blocker.js",
+    "gcs=G100",
+    "npa=1",
+    "This report does not certify compliance or provide legal conclusions."
+  ],
+  "forbiddenText": [
+    "certifies compliance",
+    "proves complete script execution order"
+  ]
+}
