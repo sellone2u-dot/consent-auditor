@@ -475,7 +475,7 @@ function reportGoogleSignalRead(D) {
   if (outcome === 'signals_observed') return 'Google Consent Mode signals observed. The scan captured eligible Google measurement or advertising requests containing: ' + D.consentParams.join(', ') + '. Signal meaning depends on the selected consent state and should be confirmed with Google Tag Assistant.';
   if (outcome === 'eligible_no_signals') return 'Google measurement or advertising requests were captured, but none contained recognized Consent Mode parameters in the observable URL or request payload. Consent Mode status was not verified.';
   if (outcome === 'no_eligible_request') return 'No eligible Google Analytics, Google Ads, or DoubleClick measurement request was captured during this scan. Consent Mode could not be evaluated. Google scripts, fonts, static resources, and Tag Manager loaders do not count as measurement evidence.';
-  if (!D.consentParams.length) return 'No Google consent parameters were captured.';
+  if (!D.consentParams.length) return 'This legacy saved scan does not contain enough request-eligibility data to evaluate Google Consent Mode.';
   var personalization = reportGoogleAdPersonalization(D);
   var notes = [];
   notes.push(personalization.label + '. ' + personalization.meaning);
@@ -486,6 +486,12 @@ function reportGoogleSignalRead(D) {
   if (D.consentParams.some(function(p) { return /^gcs=G10[01]$/i.test(p); })) notes.push('gcs=G100 or gcs=G101 is a stronger denied/default-style signal.');
   if (D.hasOnlyGcdSignal) notes.push('gcd by itself is a Consent Mode indicator but does not prove denied/default behavior.');
   return notes.length ? notes.join(' ') : 'Google consent parameters were captured and should be confirmed against the selected test state.';
+}
+
+function reportPlaceholderMeasurementWarning(D) {
+  var ids = (D && D.placeholderGoogleMeasurementIds) || [];
+  if (!ids.length) return '';
+  return 'Configuration warning: placeholder-looking Google measurement ID observed: ' + ids.join(', ') + '. Confirm the intended production measurement ID with the website or analytics vendor. This is a configuration observation, not a legal conclusion.';
 }
 
 function reportBehavioralConsentRead(D) {
@@ -511,7 +517,7 @@ function reportBehavioralConsentRead(D) {
   if (params.length) {
     return 'Google consent signals were captured. Their meaning depends on the selected consent state. Signals: ' + params.join(', ') + '.';
   }
-  return 'No Google consent parameters were captured, so behavioral consent status was not verified in this scan.';
+  return 'Google Consent Mode evidence was not verified in this legacy scan.';
 }
 
 function mdCell(value) {
@@ -558,6 +564,8 @@ function buildFinderySummary(D) {
   else if (D.consentParams.length > 0 && D.hasRestrictedSignals && pre) passes.push('Strong Google restricted/default-denied signals detected: ' + D.consentParams.join(', '));
   else if (D.consentParams.length > 0 && D.hasOnlyGcdSignal && pre) warns.push('Only gcd was detected; restricted/default-denied Google behavior was not proven');
   else if (D.consentParams.length > 0) warns.push('Google Consent Mode indicator detected, but the exact consent state needs verification');
+  var placeholderWarning = reportPlaceholderMeasurementWarning(D);
+  if (placeholderWarning) warns.push(placeholderWarning);
 
   if (pre && D.analyticsCookieCount > 0) warns.push('Analytics cookies present before consent / after Deny: ' + D.analyticsCookieCount);
 
@@ -675,7 +683,7 @@ function buildSingleStateMarkdown(D, tips) {
   addConsentBehaviorSection(lines, D);
   addComplyAutoLoadOrderSection(lines, D);
   lines.push('## BEHAVIORAL CONSENT SIGNAL READ');
-  lines.push(reportBehavioralConsentRead(D));
+  lines.push(reportGoogleSignalRead(D));
   lines.push('');
   addHighPriorityObservationsSection(lines, D);
 
@@ -706,6 +714,7 @@ function buildSingleStateMarkdown(D, tips) {
   lines.push('| Consent manager | ' + mdCell(D.hasCMP ? D.cmp + ' detected' : 'None detected') + ' | ' + mdCell(D.hasCMP ? 'Confirm it governs all relevant tags and containers.' : 'Confirm whether a CMP is installed or failing to load.') + ' | ' + mdCell(tips.cmp) + ' |');
   lines.push('| Google Tag Manager | ' + mdCell(D.gtmContainers.length ? D.gtmContainers.length + ' container(s) detected' : 'No GTM containers detected') + ' | ' + mdCell(D.gtmContainers.length > 1 ? 'Confirm ownership and CMP governance for every container.' : 'Confirm the active container is governed.') + ' | ' + mdCell(tips.gtm || 'No GTM-specific issue was detected in this scan.') + ' |');
   lines.push('| Google Consent Mode | ' + mdCell(reportGoogleAdPersonalization(D).label + (D.consentParams.length ? ' - Signals: ' + D.consentParams.join(', ') : ' - No signals captured')) + ' | ' + mdCell(reportGoogleSignalRead(D)) + ' | ' + mdCell(tips.consentMode) + ' |');
+  if (reportPlaceholderMeasurementWarning(D)) lines.push('| Google measurement configuration | Placeholder-looking ID observed | ' + mdCell(reportPlaceholderMeasurementWarning(D)) + ' | Confirm the intended production measurement ID with the analytics vendor. |');
   lines.push('| Meta / Facebook | ' + mdCell(D.metaCount === 0 ? '0 requests captured' : D.metaCount + ' request(s) captured') + ' | ' + mdCell(D.metaCount > 0 ? 'Confirm whether this was expected in this state.' : 'Confirm it stays blocked in Fresh and Deny tests.') + ' | ' + mdCell(tips.meta) + ' |');
   lines.push('| Cookies | ' + mdCell(reportCategoryCount(D, 'Essential') + ' essential, ' + reportCategoryCount(D, 'Analytics') + ' analytics, ' + targeting.length + ' targeting') + ' | ' + mdCell(targeting.length ? 'Review targeting cookies: ' + targeting.join(', ') : 'Repeat Fresh and Deny tests for proof.') + ' | ' + mdCell(tips.cookies) + ' |');
   lines.push('');
@@ -810,7 +819,8 @@ function buildConsolidatedMarkdown(hostname, states) {
   lines.push('## CONSENT BEHAVIOR READ');
   states.forEach(function(D) {
     lines.push('- ' + reportModeLabel(D) + ': ' + reportCookieMonsterRead(D));
-    lines.push('- ' + reportModeLabel(D) + ' Google behavior: ' + reportBehavioralConsentRead(D));
+    lines.push('- ' + reportModeLabel(D) + ' Google behavior: ' + reportGoogleSignalRead(D));
+    if (reportPlaceholderMeasurementWarning(D)) lines.push('- ' + reportModeLabel(D) + ' Google configuration: ' + reportPlaceholderMeasurementWarning(D));
   });
   lines.push('');
 
@@ -865,10 +875,10 @@ function buildConsolidatedMarkdown(hostname, states) {
   lines.push('');
 
   lines.push('## Headline Numbers by Test State');
-  lines.push('| Consent state | Total requests | Third-party domains | Cookies detected | Google requests | Meta requests |');
-  lines.push('|---|---:|---:|---:|---:|---:|');
+  lines.push('| Consent state | Total requests | Third-party domains | Cookies detected | General Google traffic | Eligible Google measurement / advertising requests | Meta requests |');
+  lines.push('|---|---:|---:|---:|---:|---:|---:|');
   states.forEach(function(D) {
-    lines.push('| ' + mdCell(reportModeLabel(D)) + ' | ' + D.totalReqs + ' | ' + D.thirdParty.length + ' | ' + D.cookies.length + ' | ' + D.googleCount + ' | ' + D.metaCount + ' |');
+    lines.push('| ' + mdCell(reportModeLabel(D)) + ' | ' + D.totalReqs + ' | ' + D.thirdParty.length + ' | ' + D.cookies.length + ' | ' + D.googleCount + ' | ' + (typeof D.eligibleGoogleRequestCount === 'number' ? D.eligibleGoogleRequestCount : 'Legacy scan') + ' | ' + D.metaCount + ' |');
   });
   lines.push('');
 

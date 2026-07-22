@@ -43,8 +43,38 @@ test('report distinguishes all three Google Consent Mode evidence outcomes', () 
   assert.equal(context.reportGoogleSignalRead(base), 'No eligible Google Analytics, Google Ads, or DoubleClick measurement request was captured during this scan. Consent Mode could not be evaluated. Google scripts, fonts, static resources, and Tag Manager loaders do not count as measurement evidence.');
 });
 
-test('legacy saved scans without additive Google outcome fields retain legacy wording', () => {
+test('legacy saved scans without additive Google outcome fields use explicit compatibility wording', () => {
   const context = loadBrowserScripts(['report.js']);
   assert.equal(context.reportGoogleConsentOutcome({ consentParams:[] }), 'legacy_unknown');
-  assert.equal(context.reportGoogleSignalRead({ consentParams:[] }), 'No Google consent parameters were captured.');
+  assert.equal(context.reportGoogleSignalRead({ consentParams:[] }), 'This legacy saved scan does not contain enough request-eligibility data to evaluate Google Consent Mode.');
+});
+
+test('Capital Toyota HAR evidence flows into single-state and consolidated report wording', () => {
+  const context = loadBrowserScripts(['src/core/constants.js', 'src/core/classify.js', 'src/core/consent-signals.js', 'tips.js', 'report.js']);
+  const fixture = readJson('tests/fixtures/requests/capital-toyota-consent-posts.json');
+  const evidence = context.RiskAuditorCore.interpretConsentSignals(fixture.requests);
+  const { scan:baseScan } = readJson('tests/fixtures/scans/fresh-restricted.json');
+  const scan = {
+    ...baseScan,
+    hostname:'capitaltoyota.com',
+    consentParams:Array.from(evidence.params),
+    eligibleGoogleRequestCount:evidence.eligibleGoogleRequestCount,
+    consentSignalObservations:JSON.parse(JSON.stringify(evidence.consentSignalObservations)),
+    googleConsentOutcome:evidence.googleConsentOutcome,
+    googleMeasurementIds:Array.from(evidence.googleMeasurementIds),
+    placeholderGoogleMeasurementIds:Array.from(evidence.placeholderGoogleMeasurementIds)
+  };
+  const expected = 'Google Consent Mode signals observed. The scan captured eligible Google measurement or advertising requests containing: gcs=G101, gcd=13q3r3q3q5l1, npa=1, pscdl=denied, dma=0, dma_cps=-. Signal meaning depends on the selected consent state and should be confirmed with Google Tag Assistant.';
+  const single = context.buildSingleStateMarkdown(scan, context.generateTips(scan));
+  assert.ok(single.includes(expected));
+  assert.ok(single.includes('Eligible Google measurement / advertising requests | 4'));
+  assert.ok(single.includes('placeholder-looking Google measurement ID observed: G-YYYYYYYYYY'));
+
+  const denied = JSON.parse(JSON.stringify(scan));
+  denied.auditMode = { key:'denied', label:'Denied cookies / reject all', shortLabel:'Denied cookies', isPreConsent:true, isAccepted:false, isDenied:true };
+  const consolidated = context.buildConsolidatedMarkdown(scan.hostname, [scan, denied]);
+  assert.ok(consolidated.includes(expected));
+  assert.ok(consolidated.includes('placeholder-looking Google measurement ID observed: G-YYYYYYYYYY'));
+  assert.ok(!single.includes('No Google consent parameters were captured'));
+  assert.ok(!consolidated.includes('No Google consent parameters were captured'));
 });
