@@ -188,6 +188,9 @@ function makeReportSnapshot(D) {
     cookies:D.cookies,
     thirdParty:D.thirdParty,
     consentParams:D.consentParams,
+    eligibleGoogleRequestCount:D.eligibleGoogleRequestCount,
+    consentSignalObservations:D.consentSignalObservations,
+    googleConsentOutcome:D.googleConsentOutcome,
     hasRestrictedSignals:D.hasRestrictedSignals,
     hasOnlyGcdSignal:D.hasOnlyGcdSignal,
     analyticsCookieCount:D.analyticsCookieCount,
@@ -274,7 +277,7 @@ function googleAdPersonalizationStatus(D) {
       tip: 'npa=1 means Google is being told to use non-personalized ads. Signals: ' + D.consentParams.join(', ')
     };
   }
-  if (D.consentParams.some(function(p) { return /^pscdl=denied$/i.test(p) || /^ads_data_redaction=1$/i.test(p) || /^gcs=G100$/i.test(p); })) {
+  if (D.consentParams.some(function(p) { return /^pscdl=denied$/i.test(p) || /^ads_data_redaction=1$/i.test(p) || /^gcs=G10[01]$/i.test(p); })) {
     return {
       type: 'pass',
       label: 'Google Consent Mode v2: restricted signal detected',
@@ -786,6 +789,9 @@ function buildAnalysis(tab, requests, pageData) {
   var hasStrongRestrictedSignals = consentSignals.hasRestrictedSignals;
   var hasConsentSignals = consentSignals.hasSignals;
   var hasOnlyGcdSignal = consentSignals.hasOnlyGcdSignal;
+  var eligibleGoogleRequestCount = consentSignals.eligibleGoogleRequestCount;
+  var consentSignalObservations = consentSignals.consentSignalObservations;
+  var googleConsentOutcome = consentSignals.googleConsentOutcome;
 
   var metaReqs = requests.filter(function(r) { return /facebook\.net|facebook\.com\/tr|connect\.facebook|fbevents/i.test(r.url); });
   var googleReqs = requests.filter(function(r) { return /google|doubleclick|googlesyndication/i.test(r.url); });
@@ -798,7 +804,7 @@ function buildAnalysis(tab, requests, pageData) {
   var observedSequence = buildObservedSequence(requests, cookies, pageData, hostname);
   var consentLayer = detectConsentLayer(pageData, hasCMP, cmp, auditMode, observedSequence);
 
-  var scored = RiskAuditorCore.scoreAnalysis({ auditMode:auditMode, hasCMP:hasCMP, ga4:det.ga4, hasRestrictedSignals:hasStrongRestrictedSignals, hasOnlyGcdSignal:hasOnlyGcdSignal, hasConsentSignals:hasConsentSignals, metaCount:metaReqs.length, targetingCount:targeting.length, analyticsCookieCount:analyticsCookies.length, complyAutoStatus:complyAutoLoadOrder.status, priorityBeforeCount:complyAutoLoadOrder.priorityBeforeComplyAuto.length, gtmCount:gtmContainers.length });
+  var scored = RiskAuditorCore.scoreAnalysis({ auditMode:auditMode, hasCMP:hasCMP, ga4:eligibleGoogleRequestCount > 0, hasRestrictedSignals:hasStrongRestrictedSignals, hasOnlyGcdSignal:hasOnlyGcdSignal, hasConsentSignals:hasConsentSignals, metaCount:metaReqs.length, targetingCount:targeting.length, analyticsCookieCount:analyticsCookies.length, complyAutoStatus:complyAutoLoadOrder.status, priorityBeforeCount:complyAutoLoadOrder.priorityBeforeComplyAuto.length, gtmCount:gtmContainers.length });
   var score = scored.score;
   var grade = scored.grade;
   var notes = scored.notes;
@@ -841,7 +847,7 @@ function buildAnalysis(tab, requests, pageData) {
   var analysis = {
     hostname:hostname, det:det, hasCMP:hasCMP, cmp:cmp, gtmContainers:gtmContainers,
     score:score, grade:grade, gradeNotes:notes, fireOrder:fireOrder, cookies:cookies,
-    thirdParty:thirdParty, consentParams:uniqueParams, hasRestrictedSignals:hasStrongRestrictedSignals, hasOnlyGcdSignal:hasOnlyGcdSignal, analyticsCookieCount:analyticsCookies.length,
+    thirdParty:thirdParty, consentParams:uniqueParams, eligibleGoogleRequestCount:eligibleGoogleRequestCount, consentSignalObservations:consentSignalObservations, googleConsentOutcome:googleConsentOutcome, hasRestrictedSignals:hasStrongRestrictedSignals, hasOnlyGcdSignal:hasOnlyGcdSignal, analyticsCookieCount:analyticsCookies.length,
     consentVerdict:consentVerdict, complyAutoLoadOrder:complyAutoLoadOrder, observedSequence:observedSequence, consentLayer:consentLayer, metaCount:metaReqs.length, googleCount:googleReqs.length,
     totalReqs:requests.length, auditMode:auditMode
   };
@@ -900,9 +906,12 @@ function render(D) {
   if (D.consentParams.length>0) {
     sigBox.style.display='block'; sigBox.className='sig-box sig-pass';
     sigBox.innerHTML='<div class="sig-label">Google Consent Mode signals </div>'+D.consentParams.join(' - ') + (D.hasRestrictedSignals ? '<br><span style="color:#bde88e">Strong restricted/default-denied behavior detected.</span>' : '');
-  } else if (D.det.ga4) {
+  } else if (D.googleConsentOutcome === 'eligible_no_signals') {
     sigBox.style.display='block'; sigBox.className='sig-box sig-warn';
-    sigBox.innerHTML='<div class="sig-label">Google Consent Mode - not confirmed</div>No gcs/npa/pscdl signals found in this '+D.auditMode.shortLabel.toLowerCase()+' scan.';
+    sigBox.innerHTML='<div class="sig-label">Google Consent Mode - not verified</div>Eligible Google measurement or advertising requests were captured without recognized Consent Mode parameters.';
+  } else if (D.googleConsentOutcome === 'no_eligible_request') {
+    sigBox.style.display='block'; sigBox.className='sig-box sig-warn';
+    sigBox.innerHTML='<div class="sig-label">Google Consent Mode - not evaluated</div>No eligible Google measurement or advertising request was captured.';
   }
 
   // -- Build summary items - all visible, no tap needed --
@@ -1007,12 +1016,14 @@ function buildSummaryItems(D) {
     items.push({type:googleStatus.type, icon:googleStatus.type === 'pass' ? 'OK' : googleStatus.type === 'fail' ? 'Issue' : 'Review', label:googleStatus.label, tip:googleStatus.tip});
     var behaviorStatus = behavioralConsentRead(D);
     items.push({type:behaviorStatus.type, icon:behaviorStatus.type === 'pass' ? 'OK' : behaviorStatus.type === 'fail' ? 'Issue' : 'Review', label:behaviorStatus.label, tip:behaviorStatus.tip});
-  } else if (D.det.ga4 && D.hasCMP && isPre) {
+  } else if (D.googleConsentOutcome === 'eligible_no_signals' && D.hasCMP && isPre) {
     items.push({type:'fail', icon:'Issue', label:'GOOGLE CONSENT MODE NOT CONFIRMED', tip:D.cmp+' is installed but no gcs/npa/pscdl signals were detected in this '+mode+' scan. Ask whether Consent Mode v2 is active.'});
-  } else if (D.det.ga4 && D.hasCMP) {
+  } else if (D.googleConsentOutcome === 'eligible_no_signals' && D.hasCMP) {
     items.push({type:'warn', icon:'Review', label:'Google Consent Mode not seen in this scan', tip:'Because this was '+mode+', this does not prove a pre-consent failure. Confirm using fresh incognito and deny-cookie tests.'});
-  } else if (D.det.ga4) {
+  } else if (D.googleConsentOutcome === 'eligible_no_signals') {
     items.push({type:'fail', icon:'Issue', label:'GOOGLE ANALYTICS WITH NO CONSENT CONTROLS', tip:'GA4 was detected without a consent manager or consent signals.'});
+  } else if (D.googleConsentOutcome === 'no_eligible_request') {
+    items.push({type:'warn', icon:'Review', label:'Google Consent Mode could not be evaluated', tip:'No eligible Google measurement or advertising request was captured. Loaders and static Google resources do not count as measurement evidence.'});
   }
 
   // Meta

@@ -416,7 +416,10 @@ function reportYesNo(value) {
 }
 
 function reportGcmShort(D) {
-  if (D.consentParams.length === 0) return 'No signals detected';
+  var outcome = reportGoogleConsentOutcome(D);
+  if (outcome === 'eligible_no_signals') return 'Eligible requests; no signals';
+  if (outcome === 'no_eligible_request') return 'Not evaluated; no eligible request';
+  if (outcome === 'legacy_unknown') return 'No signals detected';
   var personalization = reportGoogleAdPersonalization(D);
   if (personalization.status === 'denied') return 'Ad personalization appears denied';
   if (personalization.status === 'not-denied') return 'Ad personalization does not appear denied';
@@ -446,7 +449,7 @@ function reportGoogleAdPersonalization(D) {
       meaning: 'npa=1 means Google is being told to use non-personalized ads, which supports a restricted advertising state.'
     };
   }
-  if (D.consentParams.some(function(p) { return /^pscdl=denied$/i.test(p) || /^ads_data_redaction=1$/i.test(p) || /^gcs=G100$/i.test(p); })) {
+  if (D.consentParams.some(function(p) { return /^pscdl=denied$/i.test(p) || /^ads_data_redaction=1$/i.test(p) || /^gcs=G10[01]$/i.test(p); })) {
     return {
       status: 'denied',
       label: 'Google ad personalization: restricted signal detected',
@@ -460,7 +463,18 @@ function reportGoogleAdPersonalization(D) {
   };
 }
 
+function reportGoogleConsentOutcome(D) {
+  if (D && D.googleConsentOutcome) return D.googleConsentOutcome;
+  if (D && D.consentParams && D.consentParams.length) return 'signals_observed';
+  if (D && typeof D.eligibleGoogleRequestCount === 'number') return D.eligibleGoogleRequestCount > 0 ? 'eligible_no_signals' : 'no_eligible_request';
+  return 'legacy_unknown';
+}
+
 function reportGoogleSignalRead(D) {
+  var outcome = reportGoogleConsentOutcome(D);
+  if (outcome === 'signals_observed') return 'Google Consent Mode signals observed. The scan captured eligible Google measurement or advertising requests containing: ' + D.consentParams.join(', ') + '. Signal meaning depends on the selected consent state and should be confirmed with Google Tag Assistant.';
+  if (outcome === 'eligible_no_signals') return 'Google measurement or advertising requests were captured, but none contained recognized Consent Mode parameters in the observable URL or request payload. Consent Mode status was not verified.';
+  if (outcome === 'no_eligible_request') return 'No eligible Google Analytics, Google Ads, or DoubleClick measurement request was captured during this scan. Consent Mode could not be evaluated. Google scripts, fonts, static resources, and Tag Manager loaders do not count as measurement evidence.';
   if (!D.consentParams.length) return 'No Google consent parameters were captured.';
   var personalization = reportGoogleAdPersonalization(D);
   var notes = [];
@@ -469,7 +483,7 @@ function reportGoogleSignalRead(D) {
   if (D.consentParams.some(function(p) { return /^npa=0$/i.test(p); })) notes.push('npa=0 indicates personalized ads may be allowed; confirm this only appears after Accept.');
   if (D.consentParams.some(function(p) { return /^pscdl=denied$/i.test(p); })) notes.push('pscdl=denied is a stronger denied/default-style signal.');
   if (D.consentParams.some(function(p) { return /^ads_data_redaction=1$/i.test(p); })) notes.push('ads_data_redaction=1 indicates ad data redaction is active.');
-  if (D.consentParams.some(function(p) { return /^gcs=G100$/i.test(p); })) notes.push('gcs=G100 is a stronger denied/default-style signal.');
+  if (D.consentParams.some(function(p) { return /^gcs=G10[01]$/i.test(p); })) notes.push('gcs=G100 or gcs=G101 is a stronger denied/default-style signal.');
   if (D.hasOnlyGcdSignal) notes.push('gcd by itself is a Consent Mode indicator but does not prove denied/default behavior.');
   return notes.length ? notes.join(' ') : 'Google consent parameters were captured and should be confirmed against the selected test state.';
 }
@@ -536,9 +550,11 @@ function buildFinderySummary(D) {
   else if (D.gtmContainers.length > 1) warns.push('Multiple GTM containers: ' + D.gtmContainers.length + ' containers detected');
   else if (D.gtmContainers.length === 1) passes.push('1 GTM container detected');
 
-  if (D.det.ga4 && D.consentParams.length === 0 && D.hasCMP && pre) fails.push('Google Consent Mode not confirmed in this fresh/denied-style scan');
-  else if (D.det.ga4 && D.consentParams.length === 0 && D.hasCMP) warns.push('Google Consent Mode not detected in this selected browser state');
-  else if (D.det.ga4 && D.consentParams.length === 0 && !D.hasCMP) fails.push('Google Consent Mode missing with no CMP detected');
+  var googleOutcome = reportGoogleConsentOutcome(D);
+  if (googleOutcome === 'eligible_no_signals' && D.hasCMP && pre) fails.push('Google Consent Mode not confirmed in this fresh/denied-style scan');
+  else if (googleOutcome === 'eligible_no_signals' && D.hasCMP) warns.push('Google Consent Mode not detected in this selected browser state');
+  else if (googleOutcome === 'eligible_no_signals' && !D.hasCMP) fails.push('Google Consent Mode missing with no CMP detected');
+  else if (googleOutcome === 'no_eligible_request') warns.push('Google Consent Mode could not be evaluated because no eligible measurement or advertising request was captured');
   else if (D.consentParams.length > 0 && D.hasRestrictedSignals && pre) passes.push('Strong Google restricted/default-denied signals detected: ' + D.consentParams.join(', '));
   else if (D.consentParams.length > 0 && D.hasOnlyGcdSignal && pre) warns.push('Only gcd was detected; restricted/default-denied Google behavior was not proven');
   else if (D.consentParams.length > 0) warns.push('Google Consent Mode indicator detected, but the exact consent state needs verification');
@@ -679,7 +695,8 @@ function buildSingleStateMarkdown(D, tips) {
   lines.push('| Total requests | ' + D.totalReqs + ' |');
   lines.push('| Third-party domains | ' + D.thirdParty.length + ' |');
   lines.push('| Cookies detected | ' + D.cookies.length + ' |');
-  lines.push('| Google requests | ' + D.googleCount + ' |');
+  lines.push('| General Google traffic | ' + D.googleCount + ' |');
+  lines.push('| Eligible Google measurement / advertising requests | ' + (typeof D.eligibleGoogleRequestCount === 'number' ? D.eligibleGoogleRequestCount : 'Not available in legacy saved scan') + ' |');
   lines.push('| Meta/Facebook requests | ' + D.metaCount + ' |');
   lines.push('');
 
@@ -774,7 +791,7 @@ function buildConsolidatedMarkdown(hostname, states) {
     if (preAnalytics > 0) lines.push('- Analytics cookies were present in Fresh/Deny-style scans. The vendor should explain whether those cookies are essential, allowed, or should be blocked/cookieless when consent is not granted.');
   }
   if (maxGtm > 1) lines.push('- GTM volume should be documented: up to ' + maxGtm + ' container(s) were detected, with ' + allContainerIds.length + ' unique container(s) across the reviewed states.');
-  if (states.some(function(D) { return D.det.ga4 && (!D.hasRestrictedSignals || D.hasOnlyGcdSignal); })) lines.push('- Google Consent Mode needs stronger verification where only gcd or no signals were captured. Ask for Google Tag Assistant proof or stronger request parameters such as gcs=G100, npa=1, or pscdl=denied.');
+  if (states.some(function(D) { return reportGoogleConsentOutcome(D) === 'eligible_no_signals' || (reportGoogleConsentOutcome(D) === 'signals_observed' && D.hasOnlyGcdSignal); })) lines.push('- Google Consent Mode needs stronger verification where only gcd or no signals were captured on eligible requests. Ask for Google Tag Assistant proof or stronger request parameters such as gcs=G100, gcs=G101, npa=1, or pscdl=denied.');
   if (accepted && !reportConsentActionNotConfirmed(accepted)) lines.push('- Accepted/post-consent behavior should be materially different from Fresh and Deny. Any Meta or targeting activity after Accept may be expected, but the same behavior should not occur before consent or after Deny.');
   if (accepted && reportConsentActionNotConfirmed(accepted)) lines.push('- The Accepted/Post-consent scan should not be read as true accepted behavior because no CMP/banner was detected for the visitor to accept.');
   lines.push('- ' + reportDisclaimer());
@@ -947,7 +964,7 @@ function buildConsolidatedQuestions(states, allContainerIds) {
   var hasPreMeta = states.some(function(D) { return D.auditMode && D.auditMode.isPreConsent && D.metaCount > 0; });
   var hasPreAnalytics = states.some(function(D) { return D.auditMode && D.auditMode.isPreConsent && reportCategoryCount(D, 'Analytics') > 0; });
   var hasPreNpaAllowed = states.some(function(D) { return D.auditMode && D.auditMode.isPreConsent && D.consentParams.some(function(p) { return /^npa=0$/i.test(p); }); });
-  var hasGcmGap = states.some(function(D) { return D.det.ga4 && (!D.hasRestrictedSignals || D.hasOnlyGcdSignal); });
+  var hasGcmGap = states.some(function(D) { return reportGoogleConsentOutcome(D) === 'eligible_no_signals' || (reportGoogleConsentOutcome(D) === 'signals_observed' && (!D.hasRestrictedSignals || D.hasOnlyGcdSignal)); });
   var questions = [];
 
   if (hasMissingCmp) questions.push('Do we currently have a consent management platform installed on this website? If yes, why did the audit tool not detect it in every scanned state?');
