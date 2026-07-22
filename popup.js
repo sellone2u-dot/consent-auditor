@@ -48,12 +48,11 @@ function getAuditMode() {
 }
 
 function gradeFromScore(score) {
-  return score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
+  return RiskAuditorCore.gradeFromScore(score);
 }
 
 function capGrade(grade, cap) {
-  var order = ['A','B','C','D','F'];
-  return order.indexOf(grade) < order.indexOf(cap) ? cap : grade;
+  return RiskAuditorCore.capGrade(grade, cap);
 }
 
 function doCopyText() {
@@ -353,13 +352,11 @@ function classifyTimelineRequest(url) {
 }
 
 function isComplyAutoControlUrl(url) {
-  var u = (url || '').toLowerCase();
-  return /complyauto/.test(u) && /(^|\/)blocker\.js(?:[?#]|$)/.test(u);
+  return RiskAuditorCore.isComplyAutoControlUrl(url);
 }
 
 function isComplyAutoBannerUrl(url) {
-  var u = (url || '').toLowerCase();
-  return /complyauto/.test(u) && /(^|\/)banner\.js(?:[?#]|$)/.test(u);
+  return RiskAuditorCore.isComplyAutoBannerUrl(url);
 }
 
 function evidenceConcernForRequest(url, type) {
@@ -777,32 +774,18 @@ function buildAnalysis(tab, requests, pageData) {
   var allText = requests.map(function(r) { return r.url; })
     .concat((pageData && pageData.scripts) ? pageData.scripts : []).join(' ').toLowerCase();
 
-  var det = {
-    gtm:    allText.indexOf('googletagmanager') > -1 || allText.indexOf('gtm.js') > -1,
-    ga4:    allText.indexOf('google-analytics') > -1 || allText.indexOf('gtag/js') > -1 || allText.indexOf('analytics.google') > -1,
-    gads:   allText.indexOf('doubleclick') > -1 || allText.indexOf('googleadservices') > -1,
-    meta:   allText.indexOf('connect.facebook') > -1 || allText.indexOf('facebook.com/tr') > -1 || allText.indexOf('fbevents') > -1,
-    hotjar: allText.indexOf('hotjar') > -1,
-    clarity:allText.indexOf('clarity.ms') > -1
-  };
+  var det = RiskAuditorCore.detectTechnologies(allText);
 
   var hasComplyAutoMarker = allText.indexOf('complyauto') > -1;
   var hasCMP = (pageData && !!pageData.cmp) || hasComplyAutoMarker || /onetrust|cookiebot|usercentrics|trustarc|osano|cookieyes|quantcast|iubenda|termly/.test(allText);
   var cmp = (pageData && pageData.cmp) || (hasComplyAutoMarker ? 'ComplyAuto' : allText.indexOf('onetrust') > -1 ? 'OneTrust' : allText.indexOf('cookiebot') > -1 ? 'Cookiebot' : allText.indexOf('usercentrics') > -1 ? 'Usercentrics' : allText.indexOf('trustarc') > -1 ? 'TrustArc' : allText.indexOf('osano') > -1 ? 'Osano' : allText.indexOf('cookieyes') > -1 ? 'CookieYes' : allText.indexOf('quantcast') > -1 ? 'Quantcast Choice' : allText.indexOf('iubenda') > -1 ? 'iubenda' : allText.indexOf('termly') > -1 ? 'Termly' : null);
   var gtmContainers = (pageData && pageData.gtmContainers) ? pageData.gtmContainers : [];
 
-  var consentParams = [];
-  requests.filter(function(r) { return /google-analytics|analytics\.google|gtag\/js|googleadservices|doubleclick|pagead/i.test(r.url); }).forEach(function(r) {
-    ['gcs','gcd','npa','pscdl','ads_data_redaction'].forEach(function(param) {
-      var match = r.url.match(new RegExp('[?&]' + param + '=([^&]+)', 'i'));
-      if (match) consentParams.push(param + '=' + decodeURIComponent(match[1]));
-    });
-  });
-  var uniqueParams = consentParams.filter(function(v,i,a) { return a.indexOf(v)===i; });
-  // Treat gcd by itself as a Consent Mode v2 indicator, not as proof of restricted/default-denied behavior.
-  var hasStrongRestrictedSignals = uniqueParams.some(function(p){ return /^npa=1$/i.test(p) || /^pscdl=denied$/i.test(p) || /^ads_data_redaction=1$/i.test(p) || /^gcs=G100$/i.test(p); });
-  var hasConsentSignals = uniqueParams.length > 0;
-  var hasOnlyGcdSignal = hasConsentSignals && uniqueParams.every(function(p){ return /^gcd=/i.test(p); });
+  var consentSignals = RiskAuditorCore.interpretConsentSignals(requests);
+  var uniqueParams = consentSignals.params;
+  var hasStrongRestrictedSignals = consentSignals.hasRestrictedSignals;
+  var hasConsentSignals = consentSignals.hasSignals;
+  var hasOnlyGcdSignal = consentSignals.hasOnlyGcdSignal;
 
   var metaReqs = requests.filter(function(r) { return /facebook\.net|facebook\.com\/tr|connect\.facebook|fbevents/i.test(r.url); });
   var googleReqs = requests.filter(function(r) { return /google|doubleclick|googlesyndication/i.test(r.url); });
@@ -815,35 +798,10 @@ function buildAnalysis(tab, requests, pageData) {
   var observedSequence = buildObservedSequence(requests, cookies, pageData, hostname);
   var consentLayer = detectConsentLayer(pageData, hasCMP, cmp, auditMode, observedSequence);
 
-  var score = 100;
-  var caps = [];
-  var notes = [];
-
-  if (!hasCMP) { score -= 45; caps.push('D'); notes.push('No consent manager detected.'); }
-  if (auditMode.isPreConsent && det.ga4 && hasCMP && !hasStrongRestrictedSignals) { score -= hasOnlyGcdSignal ? 14 : 20; caps.push('B'); notes.push(hasOnlyGcdSignal ? 'Only gcd was detected; restricted/default-denied Google behavior was not proven.' : 'Google restricted/default-denied behavior not confirmed in a pre-consent style test.'); }
-  if (!auditMode.isPreConsent && det.ga4 && hasCMP && !hasConsentSignals) { score -= 3; notes.push('Consent Mode not seen in this selected browser state; confirm separately if needed.'); }
-  if (auditMode.isPreConsent && metaReqs.length > 0) { score -= hasCMP ? 25 : 35; caps.push('C'); notes.push('Meta/Facebook fired during a pre-consent or denied-cookie test.'); }
-  if (!auditMode.isPreConsent && metaReqs.length > 0 && !auditMode.isAccepted) { score -= 8; notes.push('Meta fired in current/unknown state; determine whether this was after consent.'); }
-  if (auditMode.isPreConsent && targeting.length > 0) { score -= hasCMP ? 22 : 32; caps.push('C'); notes.push('Targeting cookies appeared during a pre-consent or denied-cookie test.'); }
-  if (!auditMode.isPreConsent && targeting.length > 0 && !auditMode.isAccepted) { score -= 6; notes.push('Targeting cookies appeared in current/unknown state; confirm consent state.'); }
-  if (auditMode.isPreConsent && analyticsCookies.length > 0) { score -= 8; caps.push('B'); notes.push('Analytics cookies appeared during a pre-consent or denied-cookie test; verify they are allowed or cookieless.'); }
-  if (complyAutoLoadOrder.status === 'after-tracking') {
-    score -= auditMode.isPreConsent ? 18 : 8;
-    caps.push(auditMode.isPreConsent ? 'D' : 'C');
-    notes.push('Tracking activity appeared before ComplyAuto control script blocker.js in the request timeline.');
-  }
-  if (auditMode.isPreConsent && complyAutoLoadOrder.priorityBeforeComplyAuto.length > 0) {
-    score -= 20;
-    caps.push('F');
-    notes.push('Priority tracking or targeting signals appeared before ComplyAuto control script blocker.js.');
-  }
-  if (gtmContainers.length > 10) { score -= 15; caps.push('B'); notes.push('Excessive GTM container count creates governance risk.'); }
-  else if (gtmContainers.length > 5) { score -= 10; caps.push('B'); notes.push('High GTM container count needs governance confirmation.'); }
-  else if (gtmContainers.length > 2) score -= 4;
-
-  score = Math.max(0, Math.min(100, score));
-  var grade = gradeFromScore(score);
-  caps.forEach(function(cap){ grade = capGrade(grade, cap); });
+  var scored = RiskAuditorCore.scoreAnalysis({ auditMode:auditMode, hasCMP:hasCMP, ga4:det.ga4, hasRestrictedSignals:hasStrongRestrictedSignals, hasOnlyGcdSignal:hasOnlyGcdSignal, hasConsentSignals:hasConsentSignals, metaCount:metaReqs.length, targetingCount:targeting.length, analyticsCookieCount:analyticsCookies.length, complyAutoStatus:complyAutoLoadOrder.status, priorityBeforeCount:complyAutoLoadOrder.priorityBeforeComplyAuto.length, gtmCount:gtmContainers.length });
+  var score = scored.score;
+  var grade = scored.grade;
+  var notes = scored.notes;
 
   var consentVerdict = 'not-confirmed';
   if (hasStrongRestrictedSignals && auditMode.isPreConsent) consentVerdict = 'restricted-before-consent';
@@ -892,57 +850,16 @@ function buildAnalysis(tab, requests, pageData) {
 }
 
 function classReq(url) {
-  var u = url.toLowerCase();
-  if (/complyauto|onetrust|cookiebot|usercentrics|trustarc|osano|cookieyes|quantcast|iubenda|termly/.test(u) || isComplyAutoControlUrl(u) || isComplyAutoBannerUrl(u)) return 'consent';
-  if (/googletagmanager|gtm\.js/.test(u)) return 'tag-manager';
-  if (/google-analytics|analytics\.google|gtag\/js|collect\?v=|smetrics\.|adobedc|omtrdc|hotjar|clarity\.ms/.test(u)) return 'analytics';
-  if (/doubleclick|googleadservices|googlesyndication|pagead|connect\.facebook|facebook\.com\/tr|fbevents|ct\.pinterest|teads|stackadapt|fls\.doubleclick/.test(u)) return 'advertising';
-  return 'other';
+  return RiskAuditorCore.classifyRequest(url);
 }
 
 function nameReq(url) {
-  var u = url.toLowerCase();
-  if (isComplyAutoControlUrl(u)) return 'ComplyAuto blocker.js';
-  if (isComplyAutoBannerUrl(u)) return 'ComplyAuto banner.js';
-  if (u.indexOf('complyauto')>-1) return 'ComplyAuto';
-  if (u.indexOf('onetrust')>-1||u.indexOf('cookielaw')>-1) return 'OneTrust';
-  if (u.indexOf('cookiebot')>-1) return 'Cookiebot';
-  if (u.indexOf('usercentrics')>-1) return 'Usercentrics';
-  if (u.indexOf('trustarc')>-1) return 'TrustArc';
-  if (u.indexOf('osano')>-1) return 'Osano';
-  if (u.indexOf('cookieyes')>-1) return 'CookieYes';
-  if (u.indexOf('quantcast')>-1) return 'Quantcast Choice';
-  if (u.indexOf('iubenda')>-1) return 'iubenda';
-  if (u.indexOf('termly')>-1) return 'Termly';
-  if (u.indexOf('googletagmanager')>-1) { var g=url.match(/GTM-[A-Z0-9]+/); return 'Google Tag Manager'+(g?' ('+g[0]+')':''); }
-  if (u.indexOf('google-analytics')>-1||u.indexOf('analytics.google')>-1||u.indexOf('gtag/js')>-1) return 'Google Analytics 4';
-  if (u.indexOf('doubleclick')>-1||u.indexOf('googleadservices')>-1) return 'Google Ads';
-  if (u.indexOf('connect.facebook')>-1||u.indexOf('facebook.com/tr')>-1) return 'Meta / Facebook Pixel';
-  if (u.indexOf('ct.pinterest')>-1||u.indexOf('pinterest')>-1) return 'Pinterest Tag';
-  if (u.indexOf('insight.adsrvr.org')>-1) return 'Trade Desk';
-  if (u.indexOf('turn.com')>-1) return 'Turn / Amobee ad-tech';
-  if (u.indexOf('rlcdn')>-1 || u.indexOf('demdex')>-1) return 'Identity / audience matching';
-  if (u.indexOf('nexus.toyota')>-1 || u.indexOf('shiftdigitalapps')>-1) return 'Toyota / Shift Digital measurement';
-  if (u.indexOf('teads')>-1) return 'Teads';
-  if (u.indexOf('stackadapt')>-1) return 'StackAdapt';
-  if (u.indexOf('smetrics.lexus')>-1||u.indexOf('smetrics.toyota')>-1||u.indexOf('adobedc')>-1||u.indexOf('omtrdc')>-1) return 'Adobe / OEM Analytics';
-  if (u.indexOf('ensighten')>-1) return 'Ensighten Tag Manager';
-  if (u.indexOf('hotjar')>-1) return 'Hotjar';
-  if (u.indexOf('clarity.ms')>-1) return 'Microsoft Clarity';
-  if (u.indexOf('drivecentric')>-1) return 'DriveCentric CRM';
-  if (u.indexOf('dealereprocess')>-1) return 'Dealer eProcess';
-  if (u.indexOf('tawk')>-1) return 'Tawk.to Chat';
-  if (u.indexOf('drift')>-1) return 'Drift Chat';
-  try { return new URL(url).hostname; } catch(e) { return null; }
+  var name = RiskAuditorCore.nameRequest(url);
+  return name === 'Unknown' ? null : name;
 }
 
 function categorizeCookie(name) {
-  if (name.indexOf('_ga')===0) return 'Analytics';
-  if (['_fbp','_fbc','IDE','NID','_gcl_au','CONSENT','__gads','__gpi'].indexOf(name)>-1) return 'Targeting';
-  if (/session|sess|phpsessid/i.test(name)) return 'Essential';
-  if (/consent|comply|onetrust|cookiebot|cookie/i.test(name)) return 'Essential';
-  if (/hotjar|_hj|heap|clarity|_clsk|_clck/i.test(name)) return 'Analytics';
-  return 'Unknown';
+  return RiskAuditorCore.categorizeCookie(name);
 }
 
 function render(D) {

@@ -1,29 +1,8 @@
 // Known OEM and platform GTM containers identified through field auditing
-var KNOWN_CONTAINERS = {
-  'GTM-KMQZ7S3K': { owner: 'Toyota/Lexus OEM', risk: 'high', note: 'Toyota/Lexus corporate container' },
-  'GTM-MT64F4S':  { owner: 'Toyota/Lexus OEM', risk: 'high', note: 'OEM brand layer container' },
-  'GTM-MLHK883':  { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-MV862RN':  { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-PFPSKQNM': { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-WT64PDP':  { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-ND7WWDN':  { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-T9QJJTD':  { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-WPGZWQGR': { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-5DZL2Q6':  { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-M8LD4PJ':  { owner: 'Toyota OEM platform', risk: 'high', note: 'Recurring across Toyota dealer network' },
-  'GTM-WGWTL8KV': { owner: 'Toyota/Lexus OEM', risk: 'high', note: 'Detected on Lexus of Chattanooga — OEM layer' },
-  'GTM-TCBRBF7N': { owner: 'Honda OEM platform', risk: 'high', note: 'Recurring on Honda dealer sites' },
-  'GTM-MF2ML8X':  { owner: 'Honda OEM platform', risk: 'high', note: 'Recurring on Honda dealer sites' },
-  'GTM-5LCXP36':  { owner: 'Honda OEM platform', risk: 'high', note: 'Recurring on Honda dealer sites' }
-};
+var KNOWN_CONTAINERS = RiskAuditorCore.constants.knownContainers;
 
 function classifyContainers(ids) {
-  var oem = [], dealer = [], unknown = [];
-  ids.forEach(function(id) {
-    if (KNOWN_CONTAINERS[id]) oem.push({ id: id, info: KNOWN_CONTAINERS[id] });
-    else unknown.push(id);
-  });
-  return { oem: oem, dealer: dealer, unknown: unknown };
+  return RiskAuditorCore.classifyContainers(ids);
 }
 
 function modeLabel(D) {

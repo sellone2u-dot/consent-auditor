@@ -23,6 +23,8 @@
         "<all_urls>"
       ],
       "js": [
+        "src/core/constants.js",
+        "src/core/classify.js",
         "content.js"
       ],
       "run_at": "document_start",

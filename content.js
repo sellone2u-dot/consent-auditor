@@ -123,17 +123,7 @@
 
   // ── Script classification helpers ───────────────────────────────────────
   function classifyScript(src, inline) {
-    const text = (src + inline).toLowerCase();
-    if (text.includes('complyauto') || text.includes('onetrust') || text.includes('cookiebot') || text.includes('cookieconsent')) return 'consent';
-    if (text.includes('googletagmanager') || text.includes('gtm.js')) return 'tag-manager';
-    if (text.includes('google-analytics') || text.includes('gtag/js') || text.includes('analytics.js')) return 'analytics';
-    if (text.includes('doubleclick') || text.includes('googleadservices') || text.includes('googlesyndication')) return 'advertising';
-    if (text.includes('connect.facebook') || text.includes('fbevents') || text.includes('fbq(')) return 'advertising';
-    if (text.includes('hotjar') || text.includes('clarity.ms')) return 'analytics';
-    if (text.includes('drift') || text.includes('tawk') || text.includes('livechat')) return 'functional';
-    if (text.includes('toyota') || text.includes('lexus.com')) return 'functional';
-    if (text.includes('drivecentric') || text.includes('dealereprocess') || text.includes('dealer.com')) return 'functional';
-    return 'other';
+    return RiskAuditorCore.classifyTechnology(src + inline);
   }
 
   function nameScript(src, inline) {
@@ -183,12 +173,7 @@
   }
 
   function categorizeCookie(name) {
-    if (name.startsWith('_ga')) return 'Analytics';
-    if (['_fbp', '_fbc', 'IDE', 'NID', '_gcl_au', 'CONSENT', '__gads'].includes(name)) return 'Targeting';
-    if (name.match(/session|sess|sid|phpsessid/i)) return 'Essential';
-    if (name.match(/consent|comply|onetrust|cookiebot|cookie_notice/i)) return 'Essential';
-    if (name.match(/hotjar|_hj|heap|clarity/i)) return 'Analytics';
-    return 'Unknown';
+    return RiskAuditorCore.categorizeCookie(name);
   }
 
   // ── Run detection after page loads ──────────────────────────────────────
