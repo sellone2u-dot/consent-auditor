@@ -1,0 +1,6 @@
+[
+  { "key": "drivecentric", "name": "DriveCentric CRM", "category": "functional", "patterns": ["drivecentric"] },
+  { "key": "dealer-eprocess", "name": "Dealer eProcess", "category": "functional", "patterns": ["dealereprocess"] },
+  { "key": "shift-digital", "name": "Toyota / Shift Digital measurement", "category": "analytics", "patterns": ["shiftdigitalapps", "nexus.toyota"] },
+  { "key": "adobe-oem", "name": "Adobe / OEM Analytics", "category": "analytics", "patterns": ["smetrics.lexus", "smetrics.toyota", "adobedc", "omtrdc"] }
+]

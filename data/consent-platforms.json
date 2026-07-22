@@ -1,0 +1,12 @@
+[
+  { "key": "complyauto", "name": "ComplyAuto", "patterns": ["complyauto"] },
+  { "key": "onetrust", "name": "OneTrust", "patterns": ["onetrust", "cookielaw"] },
+  { "key": "cookiebot", "name": "Cookiebot", "patterns": ["cookiebot"] },
+  { "key": "usercentrics", "name": "Usercentrics", "patterns": ["usercentrics"] },
+  { "key": "trustarc", "name": "TrustArc", "patterns": ["trustarc"] },
+  { "key": "osano", "name": "Osano", "patterns": ["osano"] },
+  { "key": "cookieyes", "name": "CookieYes", "patterns": ["cookieyes"] },
+  { "key": "quantcast", "name": "Quantcast Choice", "patterns": ["quantcast"] },
+  { "key": "iubenda", "name": "iubenda", "patterns": ["iubenda"] },
+  { "key": "termly", "name": "Termly", "patterns": ["termly"] }
+]

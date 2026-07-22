@@ -1,0 +1,10 @@
+{
+  "prefixes": { "Analytics": ["_ga"] },
+  "exact": { "Targeting": ["_fbp", "_fbc", "IDE", "NID", "_gcl_au", "CONSENT", "__gads", "__gpi"] },
+  "patterns": [
+    { "category": "Essential", "source": "session|sess|phpsessid", "flags": "i" },
+    { "category": "Essential", "source": "consent|comply|onetrust|cookiebot|cookie", "flags": "i" },
+    { "category": "Analytics", "source": "hotjar|_hj|heap|clarity|_clsk|_clck", "flags": "i" }
+  ],
+  "fallback": "Unknown"
+}

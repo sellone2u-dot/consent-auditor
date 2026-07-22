@@ -1,0 +1,8 @@
+[
+  { "key": "gtm", "name": "Google Tag Manager", "category": "tag-manager", "patterns": ["googletagmanager", "gtm.js"] },
+  { "key": "ga4", "name": "Google Analytics 4", "category": "analytics", "patterns": ["google-analytics", "analytics.google", "gtag/js"] },
+  { "key": "google-ads", "name": "Google Ads", "category": "advertising", "patterns": ["doubleclick", "googleadservices", "googlesyndication", "pagead"] },
+  { "key": "meta", "name": "Meta / Facebook Pixel", "category": "advertising", "patterns": ["connect.facebook", "facebook.com/tr", "fbevents"] },
+  { "key": "hotjar", "name": "Hotjar", "category": "analytics", "patterns": ["hotjar"] },
+  { "key": "clarity", "name": "Microsoft Clarity", "category": "analytics", "patterns": ["clarity.ms"] }
+]
