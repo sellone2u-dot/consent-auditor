@@ -1,0 +1,21 @@
+{
+  "fixtureVersion": 1,
+  "description": "Sanitized Consent Mode request cases used to characterize v0.1.7 URL-only signal parsing and its capture gaps.",
+  "cases": [
+    { "name": "gcs G100", "request": { "url": "https://www.google-analytics.com/g/collect?v=2&gcs=G100" }, "expectedParams": ["gcs=G100"] },
+    { "name": "gcs G101", "request": { "url": "https://www.google-analytics.com/g/collect?v=2&gcs=G101" }, "expectedParams": ["gcs=G101"] },
+    { "name": "gcs G111", "request": { "url": "https://www.google-analytics.com/g/collect?v=2&gcs=G111" }, "expectedParams": ["gcs=G111"] },
+    { "name": "gcd without gcs", "request": { "url": "https://www.google-analytics.com/g/collect?v=2&gcd=13l3l3l3l5" }, "expectedParams": ["gcd=13l3l3l3l5"] },
+    { "name": "npa", "request": { "url": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/123/?npa=1" }, "expectedParams": ["npa=1"] },
+    { "name": "pscdl", "request": { "url": "https://www.google-analytics.com/g/collect?v=2&pscdl=denied" }, "expectedParams": ["pscdl=denied"] },
+    { "name": "multiple parameters", "request": { "url": "https://www.google-analytics.com/g/collect?v=2&gcs=G100&gcd=13l3l3l3l5&npa=1&pscdl=denied" }, "expectedParams": ["gcs=G100", "gcd=13l3l3l3l5", "npa=1", "pscdl=denied"] },
+    { "name": "eligible request without parameters", "request": { "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-TEST" }, "expectedParams": [] },
+    { "name": "generic Tag Manager loader", "request": { "url": "https://www.googletagmanager.com/gtm.js?id=GTM-TEST" }, "expectedParams": [] },
+    { "name": "POST payload", "request": { "url": "https://www.google-analytics.com/g/collect", "method": "POST", "consentBodyParams": [{ "name": "gcs", "value": "G100", "source": "body" }, { "name": "npa", "value": "1", "source": "body" }] }, "expectedParams": ["gcs=G100", "npa=1"] }
+  ],
+  "duplicateRequests": [
+    { "url": "https://www.google-analytics.com/g/collect?v=2&gcs=G100&npa=1" },
+    { "url": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/123/?gcs=G100&npa=1" }
+  ],
+  "duplicateExpectedParams": ["gcs=G100", "npa=1"]
+}

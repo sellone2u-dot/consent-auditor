@@ -1,6 +1,6 @@
 // background.js v12 — network request capture for consent auditing
 
-importScripts('src/core/constants.js', 'src/core/classify.js');
+importScripts('src/core/constants.js', 'src/core/classify.js', 'src/core/consent-signals.js');
 
 const tabData = {};
 
@@ -16,14 +16,19 @@ chrome.webRequest.onBeforeRequest.addListener(
       url: url, hostname: hostname,
       type: classifyRequest(url),
       name: nameRequest(url),
-      timestamp: Date.now(),
-      seq: tabData[details.tabId].seq
+      method: details.method || null,
+      resourceType: details.type || null,
+      initiator: details.initiator || null,
+      requestId: details.requestId || null,
+      timestamp: details.timeStamp == null ? Date.now() : details.timeStamp,
+      seq: tabData[details.tabId].seq,
+      consentBodyParams: RiskAuditorCore.normalizeConsentRequestBody(details.requestBody)
     });
     if (tabData[details.tabId].requests.length > 500) {
       tabData[details.tabId].requests.shift();
     }
   },
-  { urls: ['<all_urls>'] }, []
+  { urls: ['<all_urls>'] }, ['requestBody']
 );
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {

@@ -18,6 +18,9 @@ function loadBrowserScripts(relativePaths) {
     Object,
     Array,
     Set,
+    ArrayBuffer,
+    Uint8Array,
+    TextDecoder,
     decodeURIComponent,
     encodeURIComponent
   });
