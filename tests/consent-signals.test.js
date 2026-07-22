@@ -52,12 +52,15 @@ test('formData and textual raw POST bodies retain only recognized consent fields
   const formResult = api.interpretConsentSignals([{ ...collect(), method:'POST', consentBodyParams:form }]);
   assert.deepEqual(Array.from(formResult.params), ['gcs=G101', 'npa=1']);
   assert.equal(formResult.consentSignalObservations[0].signals[0].source, 'body');
-  const bytes = new TextEncoder().encode('gcs=G100&ad_user_data=denied&customer_id=private').buffer;
-  const raw = api.normalizeConsentRequestBody({ raw:[{ bytes }] });
+  const bytes = new TextEncoder().encode('gcs=G100&ad_user_data=denied&tid=G-YYYYYYYYYY&customer_id=private').buffer;
+  const normalizedRaw = api.normalizeGoogleRequestBody({ raw:[{ bytes }] });
+  const raw = normalizedRaw.consentParams;
   assert.deepEqual(plain(raw), [
     { name:'gcs', value:'G100', source:'body' },
     { name:'ad_user_data', value:'denied', source:'body' }
   ]);
+  assert.deepEqual(Array.from(normalizedRaw.measurementIds), ['G-YYYYYYYYYY']);
+  assert.equal(JSON.stringify(normalizedRaw).includes('private'), false);
   const result = api.interpretConsentSignals([{ ...collect(), method:'POST', consentBodyParams:raw }]);
   assert.equal(result.googleConsentOutcome, 'signals_observed');
   assert.deepEqual(Array.from(result.params), ['gcs=G100', 'ad_user_data=denied']);
@@ -95,4 +98,17 @@ test('sanitized fixture remains aligned with the implemented request cases', () 
   fixture.cases.forEach(({ name, request, expectedParams }) => {
     assert.deepEqual(Array.from(api.interpretConsentSignals([request]).params), expectedParams, name);
   });
+});
+
+test('Capital Toyota HAR-equivalent fetch POSTs remain eligible with all observed signals', () => {
+  const fixture = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'tests/fixtures/requests/capital-toyota-consent-posts.json'), 'utf8'));
+  const result = api.interpretConsentSignals(fixture.requests);
+  assert.equal(result.eligibleGoogleRequestCount, 4);
+  assert.equal(result.googleConsentOutcome, 'signals_observed');
+  assert.deepEqual(Array.from(result.params), [
+    'gcs=G101', 'gcd=13q3r3q3q5l1', 'npa=1', 'pscdl=denied', 'dma=0', 'dma_cps=-'
+  ]);
+  assert.ok(fixture.requests.every((request) => request.resourceType === 'fetch' && api.isEligibleGoogleConsentRequest(request)));
+  assert.deepEqual(Array.from(result.googleMeasurementIds), ['G-D293984MPT', 'G-S2B1L0T73X', 'G-GH9FXE8RZM', 'G-YYYYYYYYYY']);
+  assert.deepEqual(Array.from(result.placeholderGoogleMeasurementIds), ['G-YYYYYYYYYY']);
 });

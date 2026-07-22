@@ -29,28 +29,55 @@
     return values;
   }
 
-  function normalizeConsentRequestBody(requestBody) {
-    var values = [];
-    if (!requestBody || requestBody.error) return values;
+  function measurementIdsFromText(text) {
+    var ids = [];
+    if (typeof text !== 'string' || !text) return ids;
+    text.split('&').forEach(function(part) {
+      var separator = part.indexOf('=');
+      if (separator < 0) return;
+      try {
+        var name = decodeURIComponent(part.slice(0, separator).replace(/\+/g, ' ')).toLowerCase();
+        var value = decodeURIComponent(part.slice(separator + 1).replace(/\+/g, ' '));
+        if (name === 'tid' && /^G-[A-Z0-9]+$/i.test(value) && ids.indexOf(value.toUpperCase()) === -1) ids.push(value.toUpperCase());
+      } catch(e) {}
+    });
+    return ids;
+  }
+
+  function normalizeGoogleRequestBody(requestBody) {
+    var result = { consentParams:[], measurementIds:[] };
+    if (!requestBody || requestBody.error) return result;
     var formData = requestBody.formData;
     if (formData && typeof formData === 'object') {
       Object.keys(formData).forEach(function(name) {
         var entries = Array.isArray(formData[name]) ? formData[name] : [formData[name]];
         entries.forEach(function(value) {
-          if (typeof value === 'string') addValue(values, name, value, 'body');
+          if (typeof value !== 'string') return;
+          addValue(result.consentParams, name, value, 'body');
+          if (String(name).toLowerCase() === 'tid' && /^G-[A-Z0-9]+$/i.test(value)) {
+            var id = value.toUpperCase();
+            if (result.measurementIds.indexOf(id) === -1) result.measurementIds.push(id);
+          }
         });
       });
     }
-    if (values.length || !Array.isArray(requestBody.raw)) return values;
+    if ((result.consentParams.length || result.measurementIds.length) || !Array.isArray(requestBody.raw)) return result;
     requestBody.raw.forEach(function(upload) {
       if (!upload || !upload.bytes || typeof TextDecoder === 'undefined') return;
       try {
         var bytes = upload.bytes instanceof ArrayBuffer ? new Uint8Array(upload.bytes) : new Uint8Array(upload.bytes.buffer || upload.bytes);
         var text = new TextDecoder('utf-8', { fatal:true }).decode(bytes);
-        parseEncodedText(text, 'body').forEach(function(item) { values.push(item); });
+        parseEncodedText(text, 'body').forEach(function(item) { result.consentParams.push(item); });
+        measurementIdsFromText(text).forEach(function(id) {
+          if (result.measurementIds.indexOf(id) === -1) result.measurementIds.push(id);
+        });
       } catch(e) {}
     });
-    return values;
+    return result;
+  }
+
+  function normalizeConsentRequestBody(requestBody) {
+    return normalizeGoogleRequestBody(requestBody).consentParams;
   }
 
   function isEligibleGoogleConsentRequest(request) {
@@ -84,13 +111,24 @@
     return values;
   }
 
+  function isPlaceholderMeasurementId(id) {
+    return /^G-(?:X{6,}|Y{6,}|0{6,}|TEST[A-Z0-9]*)$/i.test(id || '');
+  }
+
   function interpretConsentSignals(requests) {
     var params = [];
     var observations = [];
     var eligibleCount = 0;
+    var measurementIds = [];
     (requests || []).forEach(function(request) {
       if (!isEligibleGoogleConsentRequest(request)) return;
       eligibleCount += 1;
+      var query = '';
+      try { query = new URL(request.url || '').search.slice(1); } catch(e) {}
+      measurementIdsFromText(query).concat(request.googleMeasurementIds || []).forEach(function(id) {
+        var normalizedId = String(id).toUpperCase();
+        if (/^G-[A-Z0-9]+$/.test(normalizedId) && measurementIds.indexOf(normalizedId) === -1) measurementIds.push(normalizedId);
+      });
       var requestValues = valuesForRequest(request);
       requestValues.forEach(function(item) {
         var param = item.name + '=' + item.value;
@@ -118,12 +156,16 @@
       hasOnlyGcdSignal:params.length > 0 && params.every(function(p){ return /^gcd=/i.test(p); }),
       eligibleGoogleRequestCount:eligibleCount,
       consentSignalObservations:observations,
-      googleConsentOutcome:outcome
+      googleConsentOutcome:outcome,
+      googleMeasurementIds:measurementIds,
+      placeholderGoogleMeasurementIds:measurementIds.filter(isPlaceholderMeasurementId)
     };
   }
 
   core.googleConsentFields = CONSENT_FIELDS.slice();
   core.normalizeConsentRequestBody = normalizeConsentRequestBody;
+  core.normalizeGoogleRequestBody = normalizeGoogleRequestBody;
+  core.isPlaceholderGoogleMeasurementId = isPlaceholderMeasurementId;
   core.isEligibleGoogleConsentRequest = isEligibleGoogleConsentRequest;
   core.interpretConsentSignals = interpretConsentSignals;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

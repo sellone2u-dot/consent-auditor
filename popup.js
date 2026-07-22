@@ -191,6 +191,8 @@ function makeReportSnapshot(D) {
     eligibleGoogleRequestCount:D.eligibleGoogleRequestCount,
     consentSignalObservations:D.consentSignalObservations,
     googleConsentOutcome:D.googleConsentOutcome,
+    googleMeasurementIds:D.googleMeasurementIds,
+    placeholderGoogleMeasurementIds:D.placeholderGoogleMeasurementIds,
     hasRestrictedSignals:D.hasRestrictedSignals,
     hasOnlyGcdSignal:D.hasOnlyGcdSignal,
     analyticsCookieCount:D.analyticsCookieCount,
@@ -327,7 +329,7 @@ function behavioralConsentRead(D) {
   return {
     type: 'warn',
     label: 'Behavioral consent read: not verified',
-    tip: 'No Google consent parameters were captured, so behavior should be verified with Fresh, Deny, and Accept scans.'
+    tip: 'Google Consent Mode evidence was not verified, so behavior should be checked with Fresh, Deny, and Accept scans.'
   };
 }
 
@@ -621,14 +623,23 @@ function waitForTabComplete(tabId, timeoutMs) {
       done = true;
       clearTimeout(timer);
       chrome.tabs.onUpdated.removeListener(listener);
-      setTimeout(function() { resolve(true); }, 1200);
+      resolve(true);
     }
     chrome.tabs.onUpdated.addListener(listener);
   });
 }
 
+function sendBackgroundMessage(message) {
+  return new Promise(function(resolve) { chrome.runtime.sendMessage(message, function(value) { resolve(value || {}); }); });
+}
+
+function getCapturedTabData(tabId) {
+  return sendBackgroundMessage({ type:'GET_DATA', tabId:tabId });
+}
+
 async function runScan(options) {
   options = options || {};
+  var captureTabId = null;
   document.getElementById('scanBtn').disabled = true;
   document.getElementById('emptyArea').style.display = 'none';
   document.getElementById('gradeBar').style.display = 'none';
@@ -649,16 +660,21 @@ async function runScan(options) {
     document.getElementById('urlBar').textContent = tab.url || '-';
 
     if (options.reloadFirst && tab && tab.id) {
+      await sendBackgroundMessage({ type:'BEGIN_CAPTURE', tabId:tab.id });
+      captureTabId = tab.id;
       await chrome.tabs.reload(tab.id, { bypassCache: true });
       await waitForTabComplete(tab.id, 15000);
       st('Collecting evidence after reload...', true);
-      var refreshedTabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      tab = refreshedTabs[0] || tab;
+      try { tab = await chrome.tabs.get(tab.id); } catch(e) {}
       document.getElementById('urlBar').textContent = tab.url || '-';
     }
 
-    var bgData = await new Promise(function(res) {
-      chrome.runtime.sendMessage({ type: 'GET_DATA', tabId: tab.id }, res);
+    var bgData = await RiskAuditorCore.waitForRequestSettle(function() {
+      return getCapturedTabData(tab.id);
+    }, {
+      quietMs: 2000,
+      maxWaitMs: 6000,
+      pollMs: 250
     });
 
     var pageData = null;
@@ -668,12 +684,17 @@ async function runScan(options) {
     } catch(e) {}
 
     var analysis = buildAnalysis(tab, (bgData && bgData.requests) ? bgData.requests : [], pageData);
+    if (captureTabId != null) {
+      await sendBackgroundMessage({ type:'END_CAPTURE', tabId:captureTabId });
+      captureTabId = null;
+    }
     currentAnalysis = analysis;
     await saveReportState(analysis);
     render(analysis);
     updateSavedReportStatus(analysis.hostname);
     document.getElementById('scanBtn').disabled = false;
   } catch(err) {
+    if (captureTabId != null) await sendBackgroundMessage({ type:'END_CAPTURE', tabId:captureTabId });
     st('Error: ' + err.message, false);
     document.getElementById('scanBtn').disabled = false;
     document.getElementById('emptyArea').style.display = 'block';
@@ -792,6 +813,8 @@ function buildAnalysis(tab, requests, pageData) {
   var eligibleGoogleRequestCount = consentSignals.eligibleGoogleRequestCount;
   var consentSignalObservations = consentSignals.consentSignalObservations;
   var googleConsentOutcome = consentSignals.googleConsentOutcome;
+  var googleMeasurementIds = consentSignals.googleMeasurementIds;
+  var placeholderGoogleMeasurementIds = consentSignals.placeholderGoogleMeasurementIds;
 
   var metaReqs = requests.filter(function(r) { return /facebook\.net|facebook\.com\/tr|connect\.facebook|fbevents/i.test(r.url); });
   var googleReqs = requests.filter(function(r) { return /google|doubleclick|googlesyndication/i.test(r.url); });
@@ -847,7 +870,7 @@ function buildAnalysis(tab, requests, pageData) {
   var analysis = {
     hostname:hostname, det:det, hasCMP:hasCMP, cmp:cmp, gtmContainers:gtmContainers,
     score:score, grade:grade, gradeNotes:notes, fireOrder:fireOrder, cookies:cookies,
-    thirdParty:thirdParty, consentParams:uniqueParams, eligibleGoogleRequestCount:eligibleGoogleRequestCount, consentSignalObservations:consentSignalObservations, googleConsentOutcome:googleConsentOutcome, hasRestrictedSignals:hasStrongRestrictedSignals, hasOnlyGcdSignal:hasOnlyGcdSignal, analyticsCookieCount:analyticsCookies.length,
+    thirdParty:thirdParty, consentParams:uniqueParams, eligibleGoogleRequestCount:eligibleGoogleRequestCount, consentSignalObservations:consentSignalObservations, googleConsentOutcome:googleConsentOutcome, googleMeasurementIds:googleMeasurementIds, placeholderGoogleMeasurementIds:placeholderGoogleMeasurementIds, hasRestrictedSignals:hasStrongRestrictedSignals, hasOnlyGcdSignal:hasOnlyGcdSignal, analyticsCookieCount:analyticsCookies.length,
     consentVerdict:consentVerdict, complyAutoLoadOrder:complyAutoLoadOrder, observedSequence:observedSequence, consentLayer:consentLayer, metaCount:metaReqs.length, googleCount:googleReqs.length,
     totalReqs:requests.length, auditMode:auditMode
   };

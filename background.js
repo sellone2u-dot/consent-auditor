@@ -4,14 +4,19 @@ importScripts('src/core/constants.js', 'src/core/classify.js', 'src/core/consent
 
 const tabData = {};
 
+function emptyTabData(captureActive) {
+  return { requests: [], seq: 0, captureRevision: 0, lastCapturedAt: null, captureActive: !!captureActive };
+}
+
 chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
     if (details.tabId < 0) return;
-    if (!tabData[details.tabId]) tabData[details.tabId] = { requests: [], seq: 0 };
+    if (!tabData[details.tabId]) tabData[details.tabId] = emptyTabData(false);
     var url = details.url;
     var hostname = '';
     try { hostname = new URL(url).hostname; } catch(e) {}
     tabData[details.tabId].seq = (tabData[details.tabId].seq || 0) + 1;
+    var googleBodyEvidence = RiskAuditorCore.normalizeGoogleRequestBody(details.requestBody);
     tabData[details.tabId].requests.push({
       url: url, hostname: hostname,
       type: classifyRequest(url),
@@ -22,8 +27,11 @@ chrome.webRequest.onBeforeRequest.addListener(
       requestId: details.requestId || null,
       timestamp: details.timeStamp == null ? Date.now() : details.timeStamp,
       seq: tabData[details.tabId].seq,
-      consentBodyParams: RiskAuditorCore.normalizeConsentRequestBody(details.requestBody)
+      consentBodyParams: googleBodyEvidence.consentParams,
+      googleMeasurementIds: googleBodyEvidence.measurementIds
     });
+    tabData[details.tabId].captureRevision += 1;
+    tabData[details.tabId].lastCapturedAt = Date.now();
     if (tabData[details.tabId].requests.length > 500) {
       tabData[details.tabId].requests.shift();
     }
@@ -32,7 +40,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 );
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
-  if (changeInfo.status === 'loading') tabData[tabId] = { requests: [], seq: 0 };
+  if (changeInfo.status === 'loading' && !(tabData[tabId] && tabData[tabId].captureActive)) tabData[tabId] = emptyTabData(false);
 });
 
 chrome.tabs.onRemoved.addListener(function(tabId) {
@@ -47,7 +55,17 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
   if (msg.type === 'GET_DATA') {
     var d = tabData[msg.tabId] || { requests: [] };
-    sendResponse({ requests: d.requests || [], pageData: d.pageData || null });
+    sendResponse({ requests: d.requests || [], pageData: d.pageData || null, captureRevision: d.captureRevision || 0, lastCapturedAt: d.lastCapturedAt || null });
+  }
+
+  if (msg.type === 'BEGIN_CAPTURE') {
+    tabData[msg.tabId] = emptyTabData(true);
+    sendResponse({ ok:true });
+  }
+
+  if (msg.type === 'END_CAPTURE') {
+    if (tabData[msg.tabId]) tabData[msg.tabId].captureActive = false;
+    sendResponse({ ok:true });
   }
 
   return true;
