@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Dealer Website Risk Auditor",
+  "version": "0.1.7",
+  "description": "Dealer-friendly website risk observation tool for consent, tracking, cookies, GTM, Google, Meta, ad-tech activity, and vendor review questions.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "cookies",
+    "webRequest",
+    "storage",
+    "downloads"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Dealer Website Risk Auditor",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

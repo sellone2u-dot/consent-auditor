@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Consent Audit PDF Report</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#eef1f5;color:#172033;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45}
+.toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:#172033;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.toolbar strong{font-size:13px}
+.toolbar span{color:#c7d0df;font-size:11px}
+.toolbar button{border:1px solid #5c78a8;background:#2f63a7;color:#fff;border-radius:5px;padding:7px 12px;font-size:12px;cursor:pointer}
+.toolbar button.secondary{background:transparent}
+.page{width:8.5in;min-height:11in;margin:22px auto;background:#fff;padding:.62in .68in;box-shadow:0 8px 28px rgba(23,32,51,.18)}
+h1{font-size:22px;line-height:1.18;margin:0 0 4px;color:#172033;font-weight:700}
+.subtitle{font-size:13px;color:#566174;margin:0 0 18px}
+h2{font-size:15px;margin:20px 0 8px;color:#21365b;border-bottom:1px solid #d8dee8;padding-bottom:4px}
+h3{font-size:12.5px;margin:14px 0 5px;color:#2b3f63}
+p{margin:0 0 8px}
+ul,ol{margin:6px 0 10px 19px;padding:0}
+li{margin:3px 0}
+table{width:100%;border-collapse:collapse;margin:8px 0 13px;page-break-inside:auto}
+th,td{border:1px solid #cfd6e1;padding:5px 6px;vertical-align:top}
+th{background:#edf2f8;color:#22324f;font-weight:700}
+tr{page-break-inside:avoid}
+code{font-family:Consolas,Menlo,monospace;background:#f2f4f7;border:1px solid #d8dee8;border-radius:3px;padding:0 3px;font-size:11px}
+strong{color:#172033}
+.note{margin-top:18px;padding-top:10px;border-top:1px solid #d8dee8;color:#566174;font-size:11px}
+.empty{max-width:620px;margin:80px auto;background:#fff;padding:28px;border-radius:8px;box-shadow:0 8px 28px rgba(23,32,51,.12)}
+@page{size:letter;margin:.45in}
+@media print{
+  html,body{background:#fff}
+  .toolbar{display:none}
+  .page{width:auto;min-height:auto;margin:0;padding:0;box-shadow:none}
+  h2{break-after:avoid}
+  table{break-inside:auto}
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div>
+    <strong>Consent Auditor PDF Report</strong><br>
+    <span>Choose "Save as PDF" in the print dialog.</span>
+  </div>
+  <div>
+    <button class="secondary" id="copyBtn">Copy text</button>
+    <button class="secondary" id="downloadTextBtn">Download text</button>
+    <button class="secondary" id="downloadHtmlBtn">Download HTML</button>
+    <button id="printBtn">Save as PDF</button>
+  </div>
+</div>
+<main class="page" id="report"></main>
+<script src="print_report.js"></script>
+</body>
+</html>
