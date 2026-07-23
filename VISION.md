@@ -271,7 +271,21 @@ Every new feature should improve one or more of the following:
 If a feature does not improve one of these areas, it likely does not belong in the product.
 
 ---
+# Product Decision Framework
 
+When considering any new feature or enhancement, ask these questions:
+
+1. Does it increase factual accuracy?
+2. Does it improve the user's understanding?
+3. Is it supported by observable browser evidence?
+4. Does it make the report easier to understand?
+5. Will it help an organization improve its privacy practices?
+
+Features should solve real problems rather than add complexity.
+
+Simplicity should always be preferred over unnecessary features.
+
+Every new capability should strengthen the product's mission rather than distract from it.
 # Development Rules
 
 Before implementing any feature, ask:
