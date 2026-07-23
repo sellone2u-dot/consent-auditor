@@ -9,7 +9,22 @@ Dealer Website Risk Auditor is an educational website privacy assessment tool bu
 The extension observes real browser behavior, reports only factual evidence, translates technical findings into plain English, and guides organizations toward stronger privacy compliance through education and recommended actions.
 
 It is designed for dealership owners, managers, marketing teams, website providers, advertising agencies, consent platform providers, and privacy professionals.
+# Source Control and Change Management
 
+All meaningful project changes should be preserved in Git.
+
+Development work should be completed on a dedicated feature branch, reviewed before merging, and pushed to the configured remote repository for backup and collaboration.
+
+Each commit should:
+
+- Represent a clear, logical change
+- Use a descriptive commit message
+- Preserve a working state whenever possible
+- Avoid overwriting established branches without review
+
+The `main` branch should remain stable.
+
+New development should normally occur on a feature branch and be merged only after the change has been reviewed and confirmed to align with this vision.
 ---
 
 # Mission
